@@ -1,0 +1,22 @@
+{
+  "name": "ca-practice-platform",
+  "version": "0.1.0",
+  "description": "CA Practice Management Platform - AI-assisted practice management and office automation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "typecheck": "turbo run typecheck"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^1.10.0"
+  }
+}

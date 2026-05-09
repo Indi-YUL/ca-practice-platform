@@ -1,0 +1,36 @@
+{
+  "name": "@ca-platform/api",
+  "version": "0.1.0",
+  "description": "Backend API - Fastify + TypeScript",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --fix",
+    "format": "prettier --write src",
+    "test": "echo 'TODO: Add tests'"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.0.0",
+    "fastify": "^4.25.0",
+    "fastify-cors": "^8.4.2",
+    "fastify-jwt": "^7.2.4",
+    "argon2": "^0.31.2",
+    "redis": "^4.6.10",
+    "bullmq": "^5.0.0",
+    "zod": "^3.22.4",
+    "pino": "^8.17.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "prisma": "^5.0.0"
+  }
+}
