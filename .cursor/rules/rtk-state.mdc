@@ -1,0 +1,91 @@
+---
+description: Redux Toolkit state management conventions for the CA Practice Platform
+globs: apps/web/src/store/**/*.ts
+alwaysApply: false
+---
+
+# Redux Toolkit State Management
+
+## Store Setup
+
+```ts
+// store/store.ts
+import { configureStore } from "@reduxjs/toolkit";
+import { baseApi } from "./api/baseApi";
+import { authSlice } from "./slices/authSlice";
+import { uiSlice } from "./slices/uiSlice";
+
+export const store = configureStore({
+  reducer: {
+    [baseApi.reducerPath]: baseApi.reducer,
+    auth: authSlice.reducer,
+    ui: uiSlice.reducer,
+  },
+  middleware: (getDefault) => getDefault().concat(baseApi.middleware),
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+```
+
+## Typed Hooks
+
+```ts
+// store/hooks.ts
+import { useDispatch, useSelector, type TypedUseSelectorHook } from "react-redux";
+import type { RootState, AppDispatch } from "./store";
+
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+```
+
+## When to Use What
+
+| Data Type | Where to Store | Example |
+|-----------|---------------|---------|
+| Server data (clients, assignments) | RTK Query cache | `useGetClientsQuery()` |
+| Auth state (current user, role) | Redux slice | `authSlice` |
+| UI state (sidebar open, filters) | Redux slice | `uiSlice` |
+| Form input state | Local `useState` | Form fields before submit |
+| Ephemeral UI (tooltips, hovers) | Local `useState` | Component-level only |
+
+## Slice Conventions
+
+```ts
+// store/slices/uiSlice.ts
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+
+interface UiState {
+  sidebarOpen: boolean;
+  activeOfficeFilter: string | null;
+}
+
+const initialState: UiState = {
+  sidebarOpen: true,
+  activeOfficeFilter: null,
+};
+
+export const uiSlice = createSlice({
+  name: "ui",
+  initialState,
+  reducers: {
+    toggleSidebar(state) {
+      state.sidebarOpen = !state.sidebarOpen;
+    },
+    setOfficeFilter(state, action: PayloadAction<string | null>) {
+      state.activeOfficeFilter = action.payload;
+    },
+  },
+});
+
+export const { toggleSidebar, setOfficeFilter } = uiSlice.actions;
+```
+
+## Rules
+
+- Always use `useAppSelector` and `useAppDispatch` (typed), never plain `useSelector`/`useDispatch`
+- Server data lives in RTK Query cache — don't duplicate into slices
+- Slices only for client-side state (auth, UI preferences, filters)
+- Never mutate state outside Immer (RTK's `createSlice` handles this)
+- Selectors in the same file as the slice, exported as named functions
+- Keep slices small and focused — one per concern

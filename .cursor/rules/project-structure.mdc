@@ -1,0 +1,71 @@
+---
+description: Project structure and architecture rules for the CA Practice Platform frontend
+alwaysApply: true
+---
+
+# CA Practice Platform — Frontend Architecture
+
+## Project Context
+
+Practice management platform for a CA firm (Chauhan & Jain). Multi-office (Mehsana, Ahmedabad), role-based (Partner, Manager, Staff, Trainee, Admin). Privacy-first, self-hosted.
+
+## Frontend Stack
+
+- React 18 + TypeScript (strict)
+- Redux Toolkit + RTK Query (state and data fetching)
+- Vite (bundler)
+- Tailwind CSS + shadcn/ui (styling)
+- React Router v6 (routing)
+- Zod (form validation)
+- Vitest + Playwright (testing)
+
+## Folder Structure (`apps/web/src/`)
+
+```
+domain/         → Business types and models (Client, Assignment, User, etc.)
+store/
+  api/          → RTK Query API slices (baseApi.ts, clientApi.ts, etc.)
+  slices/       → Redux slices for auth, UI state
+  hooks.ts      → Typed useAppSelector, useAppDispatch
+  store.ts      → Store configuration
+ui/
+  components/   → Reusable UI components
+  pages/        → Route-level page components
+  layouts/      → Shell, sidebar, navigation
+  router.tsx    → Route definitions
+lib/
+  utils.ts      → cn() helper, formatters
+  schemas/      → Zod validation schemas
+```
+
+## Architecture Rules
+
+1. **Server data via RTK Query only** — never raw fetch, Axios, or manual hooks
+2. **No business logic in components** — extract to hooks, slices, or utilities
+3. **No direct API calls in components** — use RTK Query auto-generated hooks
+4. **Shared types live in `domain/`** — not duplicated across files
+5. **One page component per route** — pages orchestrate, components render
+6. **Typed Redux hooks only** — `useAppSelector`/`useAppDispatch`, never plain versions
+
+## Domain Entities (Reference)
+
+Core models: `User`, `Client`, `ClientGroup`, `ServiceMaster`, `ClientService`, `Assignment`, `Task`, `TaskComment`, `Worklog`, `Notification`, `Announcement`
+
+## Roles
+
+Partner > Manager > Staff > Trainee. Components must respect role-based visibility:
+
+```tsx
+{user.role === "partner" && <BillingSection />}
+```
+
+## Key Patterns
+
+- Named exports only (no default exports)
+- `cn()` for conditional Tailwind classes
+- RTK Query hooks for all data fetching (`useGet{Entity}Query`, `useCreate{Entity}Mutation`)
+- RTK Query `providesTags`/`invalidatesTags` for automatic cache management
+- `.unwrap()` on mutations in try/catch for error handling
+- Forms use controlled components with Zod validation + RTK mutations
+- Tables use a shared `DataTable` component with column definitions
+- All pages handle loading / error / empty states

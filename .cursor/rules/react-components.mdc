@@ -1,0 +1,79 @@
+---
+description: React component patterns and best practices for the CA Practice Platform frontend
+globs: apps/web/**/*.tsx
+alwaysApply: false
+---
+
+# React Component Standards
+
+## Component Structure
+
+Always use functional components with this file order:
+
+1. Imports (React, libraries, local)
+2. Types/interfaces (export if shared)
+3. Component function (named export)
+
+```tsx
+// ❌ BAD — default export, inline types
+export default function Card({ title, desc }: { title: string; desc: string }) {
+  return <div>{title}</div>;
+}
+
+// ✅ GOOD — named export, typed props interface
+interface ClientCardProps {
+  clientName: string;
+  panNumber: string;
+  servicesCount: number;
+  onClick: () => void;
+}
+
+export function ClientCard({ clientName, panNumber, servicesCount, onClick }: ClientCardProps) {
+  return (
+    <button onClick={onClick} className="rounded-lg border p-4 text-left hover:bg-muted">
+      <h3 className="font-semibold">{clientName}</h3>
+      <p className="text-sm text-muted-foreground">PAN: {panNumber}</p>
+      <p className="text-sm">{servicesCount} active services</p>
+    </button>
+  );
+}
+```
+
+## Rules
+
+- Always use **named exports**, never default exports
+- Props interface named `{ComponentName}Props`, defined above the component
+- Destructure props in function signature
+- One component per file; colocate small helpers in the same file only if <15 lines
+- Use `cn()` from `lib/utils` to merge Tailwind classes conditionally (clsx + tailwind-merge)
+- Event handlers named `handle{Action}` inside component, `on{Action}` in props
+
+## State & Data
+
+- Server data: use RTK Query hooks (`useGetClientsQuery`, etc.) — never raw fetch or Axios
+- Global client state: `useAppSelector` / `useAppDispatch` from `store/hooks.ts`
+- Local UI state: `useState` for form inputs, tooltips, ephemeral UI
+- Prefer derived/computed values over `useEffect` syncing
+- Never call hooks conditionally
+
+## Loading & Error States
+
+Every component using RTK Query must handle all states:
+
+```tsx
+const { data: clients, isLoading, error, refetch } = useGetClientsQuery({ office });
+
+if (isLoading) return <Skeleton className="h-40" />;
+if (error) return <ErrorMessage message="Failed to load clients" onRetry={refetch} />;
+if (!clients?.length) return <EmptyState title="No clients yet" />;
+return <ClientList clients={clients} />;
+```
+
+## File Naming
+
+- Components: `PascalCase.tsx` (e.g., `ClientCard.tsx`)
+- Pages: `PascalCase.tsx` in `pages/` (e.g., `ClientDetail.tsx`)
+- API slices: `camelCase.ts` (e.g., `clientApi.ts` in `store/api/`)
+- Redux slices: `camelCase.ts` (e.g., `authSlice.ts` in `store/slices/`)
+- Schemas: `camelCase.ts` (e.g., `client.ts` in `lib/schemas/`)
+- Utils: `camelCase.ts` (e.g., `formatDate.ts`)
