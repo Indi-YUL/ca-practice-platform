@@ -1,0 +1,83 @@
+---
+description: RTK Query API layer and data fetching patterns for the CA Practice Platform
+globs: apps/web/src/store/**/*.ts
+alwaysApply: false
+---
+
+# API & Data Fetching — RTK Query
+
+## Architecture
+
+```
+domain/models.ts          → Type definitions
+store/api/{entity}Api.ts  → RTK Query API slices (auto-generates hooks)
+store/slices/             → Redux slices for UI/local state
+store/store.ts            → Store configuration
+```
+
+Components use auto-generated RTK Query hooks directly — no manual hooks needed for data fetching.
+
+## Base API Setup
+
+Single `baseApi` with session cookie auth:
+
+```ts
+// store/api/baseApi.ts
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const baseApi = createApi({
+  reducerPath: "api",
+  baseQuery: fetchBaseQuery({
+    baseUrl: import.meta.env.VITE_API_URL || "/api",
+    credentials: "include",
+  }),
+  tagTypes: ["Client", "Assignment", "Worklog", "Service", "User", "Notification"],
+  endpoints: () => ({}),
+});
+```
+
+## Entity API Slices (inject endpoints)
+
+One file per domain entity:
+
+```ts
+// store/api/clientApi.ts
+import { baseApi } from "./baseApi";
+import type { Client, CreateClientInput } from "@/domain/models";
+
+export const clientApi = baseApi.injectEndpoints({
+  endpoints: (build) => ({
+    getClients: build.query<Client[], { search?: string; office?: string }>({
+      query: (params) => ({ url: "/clients", params }),
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ id }) => ({ type: "Client" as const, id })), { type: "Client", id: "LIST" }]
+          : [{ type: "Client", id: "LIST" }],
+    }),
+    getClient: build.query<Client, string>({
+      query: (id) => `/clients/${id}`,
+      providesTags: (_r, _e, id) => [{ type: "Client", id }],
+    }),
+    createClient: build.mutation<Client, CreateClientInput>({
+      query: (body) => ({ url: "/clients", method: "POST", body }),
+      invalidatesTags: [{ type: "Client", id: "LIST" }],
+    }),
+    updateClient: build.mutation<Client, { id: string; data: Partial<CreateClientInput> }>({
+      query: ({ id, data }) => ({ url: `/clients/${id}`, method: "PATCH", body: data }),
+      invalidatesTags: (_r, _e, { id }) => [{ type: "Client", id }, { type: "Client", id: "LIST" }],
+    }),
+  }),
+});
+
+export const { useGetClientsQuery, useGetClientQuery, useCreateClientMutation, useUpdateClientMutation } = clientApi;
+```
+
+## Rules
+
+- Never use Axios or raw fetch — always RTK Query
+- Never store auth tokens in localStorage — sessions use httpOnly cookies
+- Use `providesTags` on queries and `invalidatesTags` on mutations for auto cache invalidation
+- API base URL from `VITE_API_URL` env variable
+- One API slice file per domain entity; all inject into `baseApi`
+- Export auto-generated hooks from each API slice
+- Use `skip` parameter to conditionally fetch: `useGetClientQuery(id, { skip: !id })`

@@ -1,0 +1,69 @@
+---
+description: Tailwind CSS and UI styling conventions for the CA Practice Platform
+globs: apps/web/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# Tailwind & Styling Standards
+
+## Utility-First
+
+- Use Tailwind utility classes directly, not custom CSS (except global resets)
+- Use `cn()` helper for conditional classes:
+
+```tsx
+import { cn } from "@/lib/utils";
+
+<div className={cn("rounded-lg border p-4", isOverdue && "border-red-500 bg-red-50")} />
+```
+
+## Design Tokens
+
+Use shadcn/ui CSS variables, not hardcoded colors:
+
+```tsx
+// ❌ BAD — hardcoded colors
+<p className="text-gray-500 bg-white border-gray-200">
+
+// ✅ GOOD — semantic tokens (adapt to theming)
+<p className="text-muted-foreground bg-background border-border">
+```
+
+## Responsive Design
+
+Mobile-first. Always start with the smallest screen and layer up:
+
+```tsx
+// ❌ BAD — desktop-first
+<div className="grid grid-cols-4 md:grid-cols-2 sm:grid-cols-1">
+
+// ✅ GOOD — mobile-first
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+```
+
+Breakpoints: `sm` (640px) · `md` (768px) · `lg` (1024px) · `xl` (1280px)
+
+## Component Patterns
+
+- Status badges: use consistent color mapping across the app
+
+```tsx
+const STATUS_COLORS: Record<AssignmentStatus, string> = {
+  draft: "bg-gray-100 text-gray-700",
+  assigned: "bg-blue-100 text-blue-700",
+  in_progress: "bg-yellow-100 text-yellow-700",
+  under_review: "bg-purple-100 text-purple-700",
+  completed: "bg-green-100 text-green-700",
+  closed: "bg-gray-200 text-gray-500",
+};
+```
+
+- Spacing: prefer `p-4`, `gap-4`, `space-y-4` (multiples of 4) for consistency
+- Never use inline `style={}` unless dynamically calculated (e.g., chart widths)
+
+## Accessibility
+
+- Interactive elements must have `focus-visible:ring-2 focus-visible:ring-ring`
+- Use semantic HTML (`<button>` not `<div onClick>`, `<nav>`, `<main>`, `<section>`)
+- All images need `alt` text; decorative images get `alt=""`
+- Form inputs must have associated `<label>` elements

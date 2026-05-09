@@ -1,0 +1,72 @@
+---
+description: TypeScript coding standards for the CA Practice Platform frontend
+globs: apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TypeScript Standards
+
+## Strict Typing
+
+- Enable and respect `strict: true` in tsconfig
+- Never use `any` — use `unknown` and narrow, or define a proper type
+- Prefer `interface` for object shapes, `type` for unions/intersections/utility types
+- Export shared types from `domain/models.ts` or `types/` directory
+
+```ts
+// ❌ BAD
+const data: any = await fetchClients();
+let status = "pending";
+
+// ✅ GOOD
+const data: Client[] = await fetchClients();
+let status: AssignmentStatus = "pending";
+```
+
+## Enums & Constants
+
+Use `as const` objects instead of TypeScript enums:
+
+```ts
+// ❌ BAD
+enum Status { Pending, InProgress, Completed }
+
+// ✅ GOOD
+export const ASSIGNMENT_STATUS = {
+  DRAFT: "draft",
+  ASSIGNED: "assigned",
+  IN_PROGRESS: "in_progress",
+  UNDER_REVIEW: "under_review",
+  COMPLETED: "completed",
+  CLOSED: "closed",
+} as const;
+
+export type AssignmentStatus = (typeof ASSIGNMENT_STATUS)[keyof typeof ASSIGNMENT_STATUS];
+```
+
+## Null Handling
+
+- Prefer `undefined` over `null` for optional values
+- Use optional chaining (`?.`) and nullish coalescing (`??`) over manual checks
+- Mark optional props/fields with `?`, not `| undefined`
+
+## Error Handling
+
+```ts
+// ❌ BAD — swallowing errors
+try { await save(data); } catch {}
+
+// ✅ GOOD — typed catch, user feedback
+try {
+  await save(data);
+} catch (error) {
+  const message = error instanceof ApiError ? error.message : "Something went wrong";
+  toast.error(message);
+}
+```
+
+## Imports
+
+- Use path aliases (`@/` → `src/`) for imports outside the current directory
+- Group imports: React → external libs → internal modules → relative files
+- No circular imports between layers (domain → application → infrastructure → ui)
