@@ -13,7 +13,7 @@
     "typecheck": "turbo run typecheck"
   },
   "workspaces": [
-    "apps/*",
+    "apps/web",
     "packages/*"
   ],
   "devDependencies": {
