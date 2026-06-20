@@ -174,6 +174,60 @@ Part of Shreeji Group (also includes Charotar Developers). Group contact: Bhaves
 What would you like to know?`;
   }
 
+  function buildContext(): string {
+    const active = assignments.filter((a) => !["completed", "closed"].includes(a.status));
+    const overdueList = assignments.filter((a) => a.dueDate < today && !["completed", "closed"].includes(a.status));
+    return `You are an AI assistant for Chauhan & Jain Chartered Accountants (Mehsana & Ahmedabad offices, 3 partners, 20 staff).
+Current user: ${currentUser.name} (${currentUser.role}, ${currentUser.office} office, ${currentUser.department}).
+Today: ${today}.
+Active assignments: ${active.length}. Overdue: ${overdueList.length}.
+${overdueList.length > 0 ? `Overdue items: ${overdueList.map((a) => `${a.clientName} - ${a.serviceName} (due ${a.dueDate}, assigned to ${a.assigneeName})`).join("; ")}` : ""}
+Active work: ${active.slice(0, 5).map((a) => `${a.clientName} - ${a.serviceName} [${a.status}] due ${a.dueDate}`).join("; ")}
+
+Answer as a helpful practice management assistant. Be concise, professional, and actionable. Use bullet points. If asked about specific clients or tasks, use the data above.`;
+  }
+
+  async function callGemini(question: string): Promise<string> {
+    const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY,
+      },
+      body: JSON.stringify({
+        contents: [
+          { parts: [{ text: buildContext() }], role: "user" },
+          { parts: [{ text: "Understood. I'm ready to help with practice management queries." }], role: "model" },
+          { parts: [{ text: question }], role: "user" },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => null);
+      const msg = err?.error?.message || `API error ${response.status}`;
+      throw new Error(msg);
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't process that request. Please try again.";
+  }
+
+  function isKnownQuestion(q: string): boolean {
+    const lower = q.toLowerCase();
+    return (
+      lower.includes("priority") || lower.includes("today") || lower.includes("morning") ||
+      lower.includes("overdue") ||
+      lower.includes("workload") || lower.includes("team") || lower.includes("staff") ||
+      lower.includes("gujarat ceramics") || lower.includes("ceramics") ||
+      lower.includes("shreeji") || lower.includes("industries") ||
+      lower.includes("compliance") || lower.includes("deadline") || lower.includes("calendar")
+    );
+  }
+
   async function handleSend(text?: string) {
     const question = text || input;
     if (!question.trim()) return;
@@ -189,10 +243,24 @@ What would you like to know?`;
     setIsTyping(true);
     setShowBriefing(false);
 
-    // Simulate AI thinking time
-    await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1500));
+    let response: string;
 
-    const response = getAiResponse(question);
+    if (isKnownQuestion(question)) {
+      await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 700));
+      response = getAiResponse(question);
+    } else {
+      try {
+        response = await callGemini(question);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Unknown error";
+        if (errorMsg.includes("quota") || errorMsg.includes("429")) {
+          response = "⚠️ AI quota temporarily exceeded. Please wait a few seconds and try again.\n\nIn the meantime, try one of the suggested questions above for instant responses.";
+        } else {
+          response = getAiResponse(question);
+        }
+      }
+    }
+
     const aiMsg: Message = {
       id: `msg-${Date.now()}`,
       role: "assistant",

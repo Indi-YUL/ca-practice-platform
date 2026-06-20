@@ -13,12 +13,18 @@ import {
   X,
   ChevronDown,
   Bot,
+  UserCog,
+  Layers,
+  CalendarDays,
 } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clients", label: "Clients", icon: Users },
   { to: "/assignments", label: "Assignments", icon: ClipboardList },
+  { to: "/staff", label: "Staff", icon: UserCog },
+  { to: "/services", label: "Services", icon: Layers },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/time", label: "Time Log", icon: Clock },
   { to: "/ai", label: "AI Assistant", icon: Bot },
 ];
