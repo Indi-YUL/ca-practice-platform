@@ -2,12 +2,16 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useGetClientByIdQuery } from "@/store/api/clientApi";
 import { useGetAssignmentsQuery } from "@/store/api/assignmentApi";
+import { useAppSelector } from "@/store/hooks";
+import { isAdmin } from "@/store/slices/authSlice";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Building2, Phone, MapPin, Edit2 } from "lucide-react";
 import { ClientFormModal } from "@/ui/components/shared/ClientFormModal";
 
 export function ClientDetailPage() {
   const { id } = useParams();
+  const { currentUser } = useAppSelector((state) => state.auth);
+  const admin = isAdmin(currentUser);
   const { data: client, isLoading } = useGetClientByIdQuery(id!);
   const { data: allAssignments = [] } = useGetAssignmentsQuery();
   const [showEdit, setShowEdit] = useState(false);
@@ -35,9 +39,11 @@ export function ClientDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             {client.groupName && <span className="rounded-full border px-3 py-1 text-xs font-medium">{client.groupName}</span>}
-            <button onClick={() => setShowEdit(true)} className="rounded-lg border p-2 hover:bg-muted">
-              <Edit2 className="h-4 w-4" />
-            </button>
+            {admin && (
+              <button onClick={() => setShowEdit(true)} className="rounded-lg border p-2 hover:bg-muted">
+                <Edit2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
