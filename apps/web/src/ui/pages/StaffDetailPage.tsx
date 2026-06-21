@@ -39,9 +39,26 @@ export function StaffDetailPage() {
               <span className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" />{member.email}</span>
               <span className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" />{member.phone}</span>
               <span className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" />{member.office} Office</span>
-              <span className="flex items-center gap-2"><Briefcase className="h-3.5 w-3.5" />{member.department}</span>
               <span className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5" />Joined {formatDate(member.dateOfJoining)}</span>
             </div>
+            <div className="mt-3">
+              <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1"><Briefcase className="h-3 w-3" /> Departments</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(member.departments || [member.department]).map((d) => (
+                  <span key={d} className="rounded-full bg-muted px-2.5 py-0.5 text-xs">{d}</span>
+                ))}
+              </div>
+            </div>
+            {member.services && member.services.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-muted-foreground mb-1.5">Services</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {member.services.map((s) => (
+                    <span key={s} className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs text-primary">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

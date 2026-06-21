@@ -5,6 +5,7 @@ export interface User {
   role: UserRole;
   office: string;
   department: string;
+  departments?: string[];
   avatar?: string;
 }
 
@@ -14,6 +15,8 @@ export interface Staff extends User {
   phone: string;
   dateOfJoining: string;
   status: "active" | "inactive";
+  departments: string[];
+  services: string[];
 }
 
 export interface Client {
@@ -45,6 +48,8 @@ export type Priority = "high" | "medium" | "low";
 
 export interface Assignment {
   id: string;
+  title?: string;
+  estimatedHours?: number;
   clientId: string;
   clientName: string;
   serviceName: string;
