@@ -49,6 +49,15 @@ export const db = {
   clients: {
     getAll: () => get(STORAGE_KEYS.clients, clients),
     getById: (id: string) => db.clients.getAll().find((c) => c.id === id),
+    create: (item: any) => { const all = db.clients.getAll(); all.push(item); set(STORAGE_KEYS.clients, all); return item; },
+    update: (id: string, patch: any) => {
+      const all = db.clients.getAll();
+      const idx = all.findIndex((c) => c.id === id);
+      if (idx === -1) return null;
+      all[idx] = { ...all[idx], ...patch };
+      set(STORAGE_KEYS.clients, all);
+      return all[idx];
+    },
   },
   services: {
     getAll: (): ServiceMaster[] => get(STORAGE_KEYS.services, services.map((s) => ({ ...s, description: "", clientCount: Math.floor(Math.random() * 50) + 5, status: "active" as const }))),

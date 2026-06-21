@@ -1,18 +1,24 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { clients } from "@/mocks/clients";
+import { useGetClientsQuery } from "@/store/api/clientApi";
 import { cn } from "@/lib/utils";
 import { Search, Plus } from "lucide-react";
+import { ClientFormModal } from "@/ui/components/shared/ClientFormModal";
 
 export function ClientsPage() {
+  const { data: clients = [], isLoading } = useGetClientsQuery();
   const [search, setSearch] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const filtered = clients.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.pan?.toLowerCase().includes(search.toLowerCase()) ||
-      c.gstin?.toLowerCase().includes(search.toLowerCase())
+      c.gstin?.toLowerCase().includes(search.toLowerCase()) ||
+      c.contactPerson?.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (isLoading) return <div className="flex items-center justify-center p-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
 
   return (
     <div className="space-y-4">
@@ -21,7 +27,7 @@ export function ClientsPage() {
           <h1 className="text-2xl font-bold">Clients</h1>
           <p className="text-sm text-muted-foreground">{clients.length} total clients</p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+        <button onClick={() => setShowAddModal(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4" /> Add Client
         </button>
       </div>
@@ -30,7 +36,7 @@ export function ClientsPage() {
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="search"
-          placeholder="Search by name, PAN, or GSTIN..."
+          placeholder="Search by name, PAN, GSTIN, or contact..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-lg border bg-background py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -75,6 +81,8 @@ export function ClientsPage() {
           <div className="p-8 text-center text-muted-foreground">No clients match your search.</div>
         )}
       </div>
+
+      {showAddModal && <ClientFormModal onClose={() => setShowAddModal(false)} />}
     </div>
   );
 }

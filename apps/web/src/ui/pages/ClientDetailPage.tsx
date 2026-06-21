@@ -1,15 +1,20 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { clients } from "@/mocks/clients";
+import { useGetClientByIdQuery } from "@/store/api/clientApi";
 import { useGetAssignmentsQuery } from "@/store/api/assignmentApi";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Building2, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Building2, Phone, MapPin, Edit2 } from "lucide-react";
+import { ClientFormModal } from "@/ui/components/shared/ClientFormModal";
 
 export function ClientDetailPage() {
   const { id } = useParams();
-  const client = clients.find((c) => c.id === id);
+  const { data: client, isLoading } = useGetClientByIdQuery(id!);
   const { data: allAssignments = [] } = useGetAssignmentsQuery();
+  const [showEdit, setShowEdit] = useState(false);
+
   const assignments = allAssignments.filter((a) => a.clientId === id);
 
+  if (isLoading) return <div className="flex items-center justify-center p-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!client) return <div className="p-8 text-center text-muted-foreground">Client not found.</div>;
 
   return (
@@ -25,10 +30,15 @@ export function ClientDetailPage() {
             <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
               <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{client.legalType}</span>
               <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{client.office}</span>
-              <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{client.contactPerson}</span>
+              <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{client.contactPerson} · {client.phone}</span>
             </div>
           </div>
-          {client.groupName && <span className="rounded-full border px-3 py-1 text-xs font-medium">{client.groupName}</span>}
+          <div className="flex items-center gap-2">
+            {client.groupName && <span className="rounded-full border px-3 py-1 text-xs font-medium">{client.groupName}</span>}
+            <button onClick={() => setShowEdit(true)} className="rounded-lg border p-2 hover:bg-muted">
+              <Edit2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {client.pan && <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">PAN</p><p className="font-mono text-sm font-medium">{client.pan}</p></div>}
@@ -41,6 +51,7 @@ export function ClientDetailPage() {
         <div className="p-4">
           <div className="flex flex-wrap gap-2">
             {client.services.map((s) => <span key={s} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{s}</span>)}
+            {client.services.length === 0 && <p className="text-sm text-muted-foreground">No services linked yet.</p>}
           </div>
         </div>
       </div>
@@ -63,6 +74,8 @@ export function ClientDetailPage() {
           {assignments.length === 0 && <p className="p-4 text-sm text-muted-foreground">No assignments for this client.</p>}
         </div>
       </div>
+
+      {showEdit && <ClientFormModal client={client} onClose={() => setShowEdit(false)} />}
     </div>
   );
 }

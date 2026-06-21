@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAppSelector } from "@/store/hooks";
+import { useGetAssignmentsQuery } from "@/store/api/assignmentApi";
 import { cn } from "@/lib/utils";
 import { Bot, Send, Sparkles, Clock, AlertTriangle, Users, FileText } from "lucide-react";
 
@@ -19,7 +20,7 @@ const SUGGESTED_QUESTIONS = [
 
 export function AiBriefingPage() {
   const { currentUser } = useAppSelector((state) => state.auth);
-  const assignments = useAppSelector((state) => state.assignments.items);
+  const { data: assignments = [] } = useGetAssignmentsQuery();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);

@@ -7,8 +7,8 @@ import { App } from "@/App";
 import "./index.css";
 
 async function bootstrap() {
-  const { worker } = await import("@/mocks/browser");
-  await worker.start({ onUnhandledRequest: "bypass" });
+  const { worker, workerOptions } = await import("@/mocks/browser");
+  await worker.start({ ...workerOptions, onUnhandledRequest: "bypass" });
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
