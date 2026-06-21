@@ -20,7 +20,7 @@ export function StaffPage() {
   const filtered = activeStaff.filter((s) => {
     const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase());
     const matchesRole = roleFilter === "all" || s.role === roleFilter;
-    const matchesDept = deptFilter === "all" || s.department === deptFilter;
+    const matchesDept = deptFilter === "all" || (s.departments || [s.department]).includes(deptFilter);
     return matchesSearch && matchesRole && matchesDept;
   });
 
@@ -78,7 +78,14 @@ export function StaffPage() {
               </span>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{member.office}</span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">{member.department}</p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {(member.departments || [member.department]).slice(0, 2).map((d) => (
+                <span key={d} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{d}</span>
+              ))}
+              {(member.departments || [member.department]).length > 2 && (
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">+{(member.departments || [member.department]).length - 2}</span>
+              )}
+            </div>
           </Link>
         ))}
       </div>

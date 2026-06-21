@@ -1,14 +1,29 @@
-# CJ Practice Manager — POC v2.0
+# CJ Practice Manager — POC v2.1
 
-**Version:** 2.0  
-**Date:** 20 June 2026  
+**Version:** 2.1  
+**Date:** 21 June 2026  
 **Type:** Frontend POC with MSW mock server (localStorage persistence)  
 **Purpose:** Extended product demonstration aligned to client blueprint  
 **Stack:** React 18 · TypeScript · Redux Toolkit + RTK Query · MSW · Tailwind CSS · Vite
 
 ---
 
-## What's New in v2 (vs v1)
+## What's New in v2.1 (vs v2.0)
+
+| Area | v2.0 | v2.1 |
+|------|------|------|
+| Client Management | Read-only list | Full CRUD — add, edit, search, detail page |
+| Assignment Creation | None (pre-seeded only) | Full creation form with title, description, checklist |
+| Assignment Editing | Status change only | Full edit modal (owner/partner only) |
+| Time Logging | View only | Log time from TimeLog page or Assignment detail |
+| Time Log Page | Basic list | Filters, summary cards, daily breakdown chart |
+| Estimate Tracking | None | Estimated hours field with progress bar indicators |
+| Staff Form | Single department dropdown | Multi-select dropdown for departments & services |
+| Staff Roles | No auto-defaults | Partners auto-select all departments & services |
+
+---
+
+## What's New in v2.0 (vs v1)
 
 | Area | v1 | v2 |
 |------|----|----|
@@ -51,98 +66,110 @@ Browser Request Flow:
 | PATCH | /api/services/:id | Update service |
 | GET | /api/assignments | List all assignments |
 | GET | /api/assignments/:id | Get assignment by ID |
+| POST | /api/assignments | **NEW** — Create assignment |
 | PATCH | /api/assignments/:id | Update assignment (status, tasks, etc.) |
 | POST | /api/assignments/:id/comments | Add comment |
 | POST | /api/assignments/:id/worklogs | Add worklog |
 | GET | /api/clients | List all clients |
 | GET | /api/clients/:id | Get client by ID |
+| POST | /api/clients | **NEW** — Create client |
+| PATCH | /api/clients/:id | **NEW** — Update client |
 
 ---
 
-## New Feature: Staff Master (M9 Partial)
+## New Feature: Client Management (M1)
 
-**Routes:** `/staff` · `/staff/:id`
+**Routes:** `/clients` · `/clients/:id`
 
-### Staff List (`/staff`)
-- Card-grid layout showing all active staff members
-- Avatar with initials, name, email, role badge, office, department
-- Filters: by Role (Partner/Manager/Staff/Trainee), by Department, by Office
-- Search by name or email
-- **Add Staff** button opens a creation modal
+### Client List (`/clients`)
+- Table view with all clients
+- Search by name, PAN, GSTIN, or contact person
+- Shows entity type, PAN, office, and service count
+- **Add Client** button opens creation modal
 
-### Staff Detail (`/staff/:id`)
-- Full profile: name, role, email, phone, office, department, date of joining
-- Performance summary: Active tasks count, Completed count, Total hours logged
-- List of active assignments with priority badges and due dates
-- Quick navigation to any assignment
+### Client Detail (`/clients/:id`)
+- Full profile: Name, entity type, PAN, GSTIN, office, contact, phone, group name
+- Active services shown as colored chips
+- Linked assignments with status and priority
+- **Edit** button opens pre-filled form
 
-### Add/Edit Staff (Modal)
-- Fields: Name, Email, Phone, Role, Department, Office, Date of Joining
-- Form validation (required fields)
+### Add/Edit Client (Modal)
+- Fields: Client/Entity Name, Entity Type (Individual, Proprietorship, Partnership, LLP, Pvt Ltd, Trust, Co-op Society, HUF), PAN (format validation), GSTIN, Office, Contact Person, Phone, Group Name
+- Services: Multi-select toggle chips from available service list
+- PAN validation enforces correct format (ABCDE1234F)
 - Saves to localStorage via MSW
-- Instantly reflected in the staff list (RTK Query cache invalidation)
 
 ---
 
-## New Feature: Service Master (M2 Partial)
+## New Feature: Assignment Creation & Editing (M2)
 
-**Route:** `/services`
+### Create Assignment (Modal from `/assignments`)
+- **Title** — clear heading for the assignment (required)
+- **Client** — dropdown from client master
+- **Service** — dropdown from service master
+- **Period** — FY, quarter, or month selector
+- **Due Date** — date picker (required)
+- **Estimated Hours** — time budget for the work
+- **Description/Notes** — scope, instructions, context (required)
+- **Checklist** — add multiple task items (at least one required), each becomes a trackable checkbox on the detail page
+- **Assign To** — dropdown of all active staff
+- **Reviewer** — partner or manager
+- **Priority** — toggle between High / Medium / Low
+- **Assigned By** — automatically set to current logged-in user
 
-### Service List
-- Grouped by category: Audit, Tax, GST, Accounting, Certification, Consultancy
-- Category filter pills at the top
-- Each service shows: Name, Frequency badge, Department, Client count
-- Edit button on each service
-
-### Add/Edit Service (Modal)
-- Fields: Service Name, Category (dropdown), Frequency (monthly/quarterly/annual/occasional), Department, Description
-- Saves immediately via MSW API
-- Cache invalidation updates the list in real-time
-
-### Service Categories
-| Category | Services |
-|----------|----------|
-| Audit | Statutory Audit, Tax Audit, Internal Audit, Trust Audit |
-| Tax | Income Tax Return, TDS Return |
-| GST | GST Return |
-| Accounting | Accounting & Book-keeping |
-| Certification | Certification (80G/12A) |
-| Consultancy | FEMA Advisory |
+### Edit Assignment (Modal from `/assignments/:id`)
+- Same fields as create, pre-filled with existing data
+- **Restricted access**: Only the assignment owner (person who created it) or a Partner can edit
+- Edit button (pencil icon) shown only to authorized users
+- Checklist items can be added/removed during edit
+- Completed items shown with strikethrough
 
 ---
 
-## New Feature: Compliance Calendar (M4)
+## New Feature: Time Logging (M5)
 
-**Route:** `/calendar`
+### Log Time (Modal)
+- Accessible from **Time Log page** ("Log Time" button) and **Assignment Detail page** (+ button on Time Logged card)
+- Fields: Assignment (dropdown of active assignments), Date, Hours (0.25 increments), Work Description
+- Logged by current user automatically
+- Immediately reflects in both Time Log page and Assignment detail
 
-### Monthly Calendar View
-- Full month grid showing all deadlines
-- Color-coded by type:
-  - Blue pills = Compliance deadlines (GSTR-1, GSTR-3B, TDS)
-  - Red pills = High priority assignment deadlines
-  - Yellow pills = Medium priority deadlines
-- Today highlighted
-- Navigate between months with arrows
-- Click any date to see all deadlines
+### Time Log Page (`/time-log`)
+- **Summary Cards**: Total hours, Average per day, Daily breakdown mini-chart
+- **Filters**: Date range (Today / This Week / This Month / All) + Staff dropdown
+- **Entry List**: Each entry shows client, service, description, staff name, hours, date
+- All entries aggregated from assignment worklogs across the firm
 
-### Timeline View
-- Toggle between Calendar and Timeline
-- Grouped sections: Overdue, This Week, Next Week, Later
-- Each item shows: Client, Service, Assignee, Priority badge, Due date
-- Overdue items pinned at top with red badge
-- Click any item to navigate to assignment detail
+### Assignment Detail — Time Tracking
+- Time Logged card shows total hours vs estimated hours
+- **Progress bar with color coding**:
+  - Green: under 80% of estimate
+  - Yellow: 80-100% of estimate (warning)
+  - Red: over estimate — displays "Over by X.Xh"
+- Hours number turns red when over budget
+- "View X entries" button opens modal with full worklog list and estimate progress
 
-### Built-in Compliance Dates
-- 7th: TDS Payment (monthly)
-- 11th: GSTR-1 Due (monthly)
-- 20th: GSTR-3B Due (monthly)
-- 15th: TDS Return (quarterly — Apr, Jul, Oct, Jan)
+---
+
+## Updated Feature: Staff Master (M9)
+
+### Multi-Select Departments & Services
+- Staff members can belong to **multiple departments** (not just one)
+- Each staff member has associated **services** they handle
+- **Multi-select dropdown** with:
+  - Checkboxes for each option
+  - "Select All / Deselect All" toggle
+  - Selected items shown as removable chips below
+  - Summary text ("3 selected" or "All Departments (4)")
+- **Partners**: Automatically have all departments and all services pre-selected when role is set to Partner
+- Staff list shows department chips (max 2 visible + "+N" overflow)
+- Staff detail page displays full departments and services as colored chips
 
 ---
 
 ## Updated Feature: Task Workflow (M2)
 
-### New Status Flow (aligned to client blueprint)
+### Status Flow (aligned to client blueprint)
 
 ```
 Not Started → In Progress → Completed → Reviewed → Billed
@@ -160,14 +187,40 @@ Not Started → In Progress → Completed → Reviewed → Billed
 | Reviewed | Manager/Partner approves |
 | Billed | Invoice raised against this task |
 
-### Priority System (New)
+### Priority System
 - **High** (red badge) — urgent, approaching deadline or overdue
 - **Medium** (yellow badge) — standard work
 - **Low** (green badge) — can wait
 
-### Assigned By Field (New)
-- Every assignment now shows who created/assigned it
-- Supports Partner → Manager → Staff hierarchy tracking
+### Assignment Display Hierarchy
+- **Heading**: Assignment title (e.g. "Statutory Audit FY 2025-26")
+- **Sub-header**: Client name · Service · Period
+
+---
+
+## Updated Feature: Compliance Calendar (M4)
+
+**Route:** `/calendar`
+
+### Monthly Calendar View
+- Full month grid showing all deadlines
+- Color-coded by type:
+  - Blue pills = Compliance deadlines (GSTR-1, GSTR-3B, TDS)
+  - Red pills = High priority assignment deadlines
+  - Yellow pills = Medium priority deadlines
+- Today highlighted
+- Navigate between months with arrows
+
+### Timeline View
+- Toggle between Calendar and Timeline
+- Grouped sections: Overdue, This Week, Next Week, Later
+- Each item shows: Client, Service, Assignee, Priority badge, Due date
+
+### Built-in Compliance Dates
+- 7th: TDS Payment (monthly)
+- 11th: GSTR-1 Due (monthly)
+- 20th: GSTR-3B Due (monthly)
+- 15th: TDS Return (quarterly — Apr, Jul, Oct, Jan)
 
 ---
 
@@ -199,10 +252,10 @@ Not Started → In Progress → Completed → Reviewed → Billed
 
 | What | Storage | Behavior |
 |------|---------|----------|
-| Staff members | localStorage (`cj_staff`) | Persists across refresh. Add new staff, they stay. |
+| Staff members | localStorage (`cj_staff`) | Persists across refresh. Multi-dept and services stored. |
 | Services | localStorage (`cj_services`) | Persists. Add/edit services reflected permanently. |
-| Assignments | localStorage (`cj_assignments`) | Status changes, comments, worklogs all persist. |
-| Clients | localStorage (`cj_clients`) | Read-only for now. |
+| Assignments | localStorage (`cj_assignments`) | Create, edit, status changes, comments, worklogs all persist. |
+| Clients | localStorage (`cj_clients`) | Full CRUD — add, edit, search all persist. |
 | Auth/Role | Redux (in-memory) | Resets on refresh (role switcher for demo). |
 
 **To reset all data:** Clear localStorage in browser DevTools → refresh.
@@ -215,7 +268,7 @@ Not Started → In Progress → Completed → Reviewed → Billed
 apps/web/src/
 ├── main.tsx                        # Bootstrap: MSW init → React render
 ├── App.tsx                         # 12 routes
-├── domain/models.ts                # Staff, ServiceMaster, Assignment (with priority)
+├── domain/models.ts                # Staff (multi-dept), Assignment (title, estimate)
 ├── store/
 │   ├── store.ts                    # Redux + RTK Query middleware
 │   ├── hooks.ts                    # Typed hooks
@@ -223,39 +276,43 @@ apps/web/src/
 │   │   ├── baseApi.ts             # RTK Query base (fetchBaseQuery → /api)
 │   │   ├── staffApi.ts            # CRUD endpoints
 │   │   ├── serviceApi.ts          # CRUD endpoints
-│   │   ├── assignmentApi.ts       # Assignments + comments + worklogs
-│   │   └── clientApi.ts           # Read-only
+│   │   ├── assignmentApi.ts       # Full CRUD + comments + worklogs
+│   │   └── clientApi.ts           # Full CRUD endpoints
 │   └── slices/
 │       └── authSlice.ts           # Role switching
 ├── mocks/
 │   ├── browser.ts                  # MSW worker setup
-│   ├── db.ts                       # localStorage CRUD helpers
+│   ├── db.ts                       # localStorage CRUD helpers (all entities)
 │   ├── handlers/
 │   │   ├── index.ts               # All handlers combined
 │   │   ├── staff.ts               # GET/POST/PATCH /api/staff
 │   │   ├── services.ts            # GET/POST/PATCH /api/services
-│   │   ├── assignments.ts         # GET/PATCH + comments + worklogs
-│   │   └── clients.ts             # GET /api/clients
-│   ├── users.ts                    # Seed data
-│   ├── clients.ts                  # Seed data
-│   ├── services.ts                 # Seed data
+│   │   ├── assignments.ts         # GET/POST/PATCH + comments + worklogs
+│   │   └── clients.ts             # GET/POST/PATCH /api/clients
+│   ├── users.ts                    # Seed data (12 staff)
+│   ├── clients.ts                  # Seed data (15 clients)
+│   ├── services.ts                 # Seed data (10 services)
 │   └── assignments.ts             # Seed data (12 items)
 ├── ui/
 │   ├── layouts/AppLayout.tsx       # 8-item nav
 │   ├── pages/
 │   │   ├── DashboardPage.tsx      # Role-based
-│   │   ├── ClientsPage.tsx
-│   │   ├── ClientDetailPage.tsx
-│   │   ├── AssignmentsPage.tsx    # Priority + status filters
-│   │   ├── AssignmentDetailPage.tsx # RTK mutations
-│   │   ├── StaffPage.tsx          # NEW — card grid + filters
-│   │   ├── StaffDetailPage.tsx    # NEW — profile + stats
-│   │   ├── ServiceMasterPage.tsx  # NEW — grouped + CRUD
-│   │   ├── CalendarPage.tsx       # NEW — grid + timeline
-│   │   ├── TimeLogPage.tsx
-│   │   └── AiBriefingPage.tsx
+│   │   ├── ClientsPage.tsx        # UPDATED — full CRUD
+│   │   ├── ClientDetailPage.tsx   # UPDATED — edit button
+│   │   ├── AssignmentsPage.tsx    # UPDATED — create button
+│   │   ├── AssignmentDetailPage.tsx # UPDATED — edit, time log modal
+│   │   ├── StaffPage.tsx          # UPDATED — multi-dept chips
+│   │   ├── StaffDetailPage.tsx    # UPDATED — depts + services display
+│   │   ├── ServiceMasterPage.tsx  # Grouped + CRUD
+│   │   ├── CalendarPage.tsx       # Grid + timeline
+│   │   ├── TimeLogPage.tsx        # UPDATED — filters, summary, log button
+│   │   └── AiBriefingPage.tsx     # Fixed RTK Query migration
 │   └── components/shared/
-│       └── StaffFormModal.tsx      # NEW — add staff form
+│       ├── StaffFormModal.tsx      # Multi-select dropdown
+│       ├── ClientFormModal.tsx     # NEW — full client form
+│       ├── AssignmentFormModal.tsx # NEW — create assignment
+│       ├── AssignmentEditModal.tsx # NEW — edit assignment (owner only)
+│       └── TimeLogFormModal.tsx   # NEW — log time entry
 ```
 
 ---
@@ -274,30 +331,32 @@ npx vite --port 5173
 
 ## Demo Highlights for Stakeholder
 
-1. **Data persists** — Add a staff member, refresh the page — they're still there
-2. **Real API calls** — Open DevTools Network tab to show professional HTTP requests
-3. **Staff Master** — "Here's your team directory, you can add people, filter by department"
-4. **Service Master** — "All your services organized by category, easy to manage"
-5. **Calendar** — "Never miss a compliance deadline — see everything in one view"
-6. **Priority** — "High-priority work is flagged red, so partners know what matters"
-7. **Workflow** — "Track work from assignment to billing — complete audit trail"
-8. **Role switching** — Switch Partner → Staff to show personalized views
+1. **Full client management** — Add a client with PAN, GSTIN, services — see them in the list
+2. **Assignment lifecycle** — Create assignment with title, description, checklist → assign to staff → track progress → log time → mark reviewed → bill it
+3. **Time tracking** — Log hours against any assignment, see budget vs actual with color indicators
+4. **Over-budget alerts** — Progress bar turns red when logged time exceeds estimate
+5. **Ownership control** — Only the assigner or partner can edit an assignment
+6. **Staff multi-role** — Partners oversee all departments, staff assigned to specific ones
+7. **Data persists** — Everything saves to localStorage — refresh and it's all still there
+8. **Calendar** — Never miss a compliance deadline — see everything in one view
+9. **Role switching** — Switch Partner → Staff to show personalized dashboard views
+10. **Real API calls** — Open DevTools Network tab to show professional HTTP request/response
 
 ---
 
 ## What's Next (v3)
 
-- [ ] Add/Edit Client forms with PAN/GSTIN validation
 - [ ] Billing module (price list, invoice generation, billed/unbilled toggle)
 - [ ] Communication Hub (broadcast, direct messages, acknowledgements)
-- [ ] Time entry form (start/stop timer, billable/non-billable)
+- [ ] Timer-based time entry (start/stop, auto-calculate duration)
 - [ ] Client Portal (OTP login, service request, query submission)
 - [ ] Real backend (Node.js/Fastify + PostgreSQL)
 - [ ] Push notifications for overdue items
 - [ ] PDF report exports (staff utilization, client MIS)
+- [ ] Document management (upload, link to assignments)
 
 ---
 
 *Document prepared for: Stakeholder Review*  
 *Prepared by: Development Team*  
-*Version: 2.0 — Frontend POC with Mock Server*
+*Version: 2.1 — Frontend POC with Full CRUD & Time Tracking*

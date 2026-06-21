@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useGetAssignmentsQuery } from "@/store/api/assignmentApi";
 import { cn } from "@/lib/utils";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Plus } from "lucide-react";
+import { AssignmentFormModal } from "@/ui/components/shared/AssignmentFormModal";
 
 const STATUS_OPTIONS = ["all", "not_started", "in_progress", "query_hold", "waiting_for_info", "completed", "reviewed", "billed"];
 const PRIORITY_OPTIONS = ["all", "high", "medium", "low"];
@@ -12,6 +13,7 @@ export function AssignmentsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const today = new Date().toISOString().split("T")[0];
 
   const filtered = assignments.filter((a) => {
@@ -25,9 +27,14 @@ export function AssignmentsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Assignments</h1>
-        <p className="text-sm text-muted-foreground">{assignments.length} total work items</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Assignments</h1>
+          <p className="text-sm text-muted-foreground">{assignments.length} total work items</p>
+        </div>
+        <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <Plus className="h-4 w-4" /> Create Assignment
+        </button>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -57,10 +64,10 @@ export function AssignmentsPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium">{a.clientName}</p>
+                  <p className="font-medium">{a.title || a.serviceName}</p>
                   <PriorityBadge priority={a.priority} />
                 </div>
-                <p className="text-sm text-muted-foreground">{a.serviceName} · {a.period}</p>
+                <p className="text-sm text-muted-foreground">{a.clientName} · {a.serviceName} · {a.period}</p>
                 <p className="mt-1 text-xs text-muted-foreground">Assigned to: {a.assigneeName}{a.assignedByName ? ` · By: ${a.assignedByName}` : ""}</p>
               </div>
               <div className="text-right shrink-0">
@@ -82,6 +89,8 @@ export function AssignmentsPage() {
         ))}
         {filtered.length === 0 && <div className="rounded-lg border p-8 text-center text-muted-foreground">No assignments match your filters.</div>}
       </div>
+
+      {showCreateModal && <AssignmentFormModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }

@@ -7,6 +7,24 @@ export const assignmentHandlers = [
     return HttpResponse.json(db.assignments.getAll());
   }),
 
+  http.post("/api/assignments", async ({ request }) => {
+    await delay(400);
+    const body = await request.json() as Record<string, unknown>;
+    const now = new Date().toISOString();
+    const newAssignment = {
+      id: `a${Date.now()}`,
+      tasks: [],
+      comments: [],
+      worklogs: [],
+      status: "not_started",
+      createdAt: now,
+      updatedAt: now,
+      ...body,
+    };
+    db.assignments.create(newAssignment as any);
+    return HttpResponse.json(newAssignment, { status: 201 });
+  }),
+
   http.get("/api/assignments/:id", async ({ params }) => {
     await delay(200);
     const assignment = db.assignments.getById(params.id as string);

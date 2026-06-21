@@ -7,6 +7,10 @@ export const assignmentApi = baseApi.injectEndpoints({
       query: () => "/assignments",
       providesTags: ["Assignment"],
     }),
+    createAssignment: build.mutation<Assignment, Partial<Assignment>>({
+      query: (body) => ({ url: "/assignments", method: "POST", body }),
+      invalidatesTags: ["Assignment"],
+    }),
     getAssignmentById: build.query<Assignment, string>({
       query: (id) => `/assignments/${id}`,
       providesTags: (_r, _e, id) => [{ type: "Assignment", id }],
@@ -17,11 +21,11 @@ export const assignmentApi = baseApi.injectEndpoints({
     }),
     addComment: build.mutation<Comment, { assignmentId: string; comment: Omit<Comment, "id"> }>({
       query: ({ assignmentId, comment }) => ({ url: `/assignments/${assignmentId}/comments`, method: "POST", body: comment }),
-      invalidatesTags: (_r, _e, { assignmentId }) => [{ type: "Assignment", id: assignmentId }],
+      invalidatesTags: (_r, _e, { assignmentId }) => [{ type: "Assignment", id: assignmentId }, "Assignment"],
     }),
     addWorklog: build.mutation<Worklog, { assignmentId: string; worklog: Omit<Worklog, "id"> }>({
       query: ({ assignmentId, worklog }) => ({ url: `/assignments/${assignmentId}/worklogs`, method: "POST", body: worklog }),
-      invalidatesTags: (_r, _e, { assignmentId }) => [{ type: "Assignment", id: assignmentId }],
+      invalidatesTags: (_r, _e, { assignmentId }) => [{ type: "Assignment", id: assignmentId }, "Assignment"],
     }),
   }),
 });
@@ -29,6 +33,7 @@ export const assignmentApi = baseApi.injectEndpoints({
 export const {
   useGetAssignmentsQuery,
   useGetAssignmentByIdQuery,
+  useCreateAssignmentMutation,
   useUpdateAssignmentMutation,
   useAddCommentMutation,
   useAddWorklogMutation,

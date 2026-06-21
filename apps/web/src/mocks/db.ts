@@ -23,12 +23,17 @@ function set<T>(key: string, data: T[]) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
+const ALL_DEPARTMENTS = ["Income Tax & TDS", "Auditing & Certification", "GST & Consultancy", "Accounting"];
+const ALL_SERVICES = ["Statutory Audit", "Tax Audit", "Internal Audit", "Trust Audit", "Income Tax Return", "TDS Return", "GST Return", "Accounting & Book-keeping", "Certification (80G/12A)", "FEMA Advisory"];
+
 // Staff seed — extend users with extra fields
 const staffSeed: Staff[] = users.map((u) => ({
   ...u,
   phone: `98765${String(Math.floor(10000 + Math.random() * 90000))}`,
   dateOfJoining: u.role === "partner" ? "2010-04-01" : u.role === "manager" ? "2016-06-15" : u.role === "staff" ? "2020-01-10" : "2024-07-01",
   status: "active" as const,
+  departments: u.role === "partner" ? ALL_DEPARTMENTS : [u.department],
+  services: u.role === "partner" ? ALL_SERVICES : u.role === "manager" ? ALL_SERVICES.slice(0, 6) : ALL_SERVICES.slice(0, 3),
 }));
 
 export const db = {
@@ -75,6 +80,7 @@ export const db = {
   assignments: {
     getAll: (): Assignment[] => get(STORAGE_KEYS.assignments, seedAssignments),
     getById: (id: string) => db.assignments.getAll().find((a) => a.id === id),
+    create: (item: Assignment) => { const all = db.assignments.getAll(); all.push(item); set(STORAGE_KEYS.assignments, all); return item; },
     update: (id: string, patch: Partial<Assignment>) => {
       const all = db.assignments.getAll();
       const idx = all.findIndex((a) => a.id === id);
