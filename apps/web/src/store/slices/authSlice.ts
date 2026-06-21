@@ -2,9 +2,15 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { User, UserRole } from "@/domain/models";
 import { users, currentUserIds } from "@/mocks/users";
 
-interface AuthState {
+const ADMIN_USER_ID = "u1";
+
+export interface AuthState {
   currentUser: User;
   isAuthenticated: boolean;
+}
+
+export function isAdmin(user: User): boolean {
+  return user.id === ADMIN_USER_ID;
 }
 
 const initialState: AuthState = {

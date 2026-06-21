@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useGetClientsQuery } from "@/store/api/clientApi";
+import { useAppSelector } from "@/store/hooks";
+import { isAdmin } from "@/store/slices/authSlice";
 import { cn } from "@/lib/utils";
 import { Search, Plus } from "lucide-react";
 import { ClientFormModal } from "@/ui/components/shared/ClientFormModal";
 
 export function ClientsPage() {
+  const { currentUser } = useAppSelector((state) => state.auth);
   const { data: clients = [], isLoading } = useGetClientsQuery();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const admin = isAdmin(currentUser);
 
   const filtered = clients.filter(
     (c) =>
@@ -27,9 +31,11 @@ export function ClientsPage() {
           <h1 className="text-2xl font-bold">Clients</h1>
           <p className="text-sm text-muted-foreground">{clients.length} total clients</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Add Client
-        </button>
+        {admin && (
+          <button onClick={() => setShowAddModal(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Add Client
+          </button>
+        )}
       </div>
 
       <div className="relative">
