@@ -1,49 +1,40 @@
 import { useState } from "react";
-import { useCreateAssignmentMutation } from "@/store/api/assignmentApi";
+import { useUpdateAssignmentMutation } from "@/store/api/assignmentApi";
 import { useGetClientsQuery } from "@/store/api/clientApi";
 import { useGetServicesQuery } from "@/store/api/serviceApi";
 import { useGetStaffQuery } from "@/store/api/staffApi";
-import { useAppSelector } from "@/store/hooks";
-import type { Priority, Task } from "@/domain/models";
+import type { Assignment, Priority, Task } from "@/domain/models";
 import { X, Plus, Trash2 } from "lucide-react";
 
 interface Props {
+  assignment: Assignment;
   onClose: () => void;
 }
 
 const PERIOD_OPTIONS = [
-  "FY 2025-26",
-  "FY 2024-25",
-  "Q1 2025-26 (Apr-Jun)",
-  "Q2 2025-26 (Jul-Sep)",
-  "Q3 2025-26 (Oct-Dec)",
-  "Q4 2025-26 (Jan-Mar)",
-  "Mar 2026",
-  "Apr 2026",
-  "May 2026",
-  "Jun 2026",
+  "FY 2025-26", "FY 2024-25",
+  "Q1 2025-26 (Apr-Jun)", "Q2 2025-26 (Jul-Sep)", "Q3 2025-26 (Oct-Dec)", "Q4 2025-26 (Jan-Mar)",
+  "Mar 2026", "Apr 2026", "May 2026", "Jun 2026",
 ];
 
-export function AssignmentFormModal({ onClose }: Props) {
-  const { currentUser } = useAppSelector((state) => state.auth);
-  const [createAssignment, { isLoading }] = useCreateAssignmentMutation();
+export function AssignmentEditModal({ assignment, onClose }: Props) {
+  const [updateAssignment, { isLoading }] = useUpdateAssignmentMutation();
   const { data: clients = [] } = useGetClientsQuery();
   const { data: services = [] } = useGetServicesQuery();
   const { data: staff = [] } = useGetStaffQuery();
 
   const [form, setForm] = useState({
-    title: "",
-    clientId: "",
-    serviceName: "",
-    period: "FY 2025-26",
-    assigneeId: "",
-    reviewerId: "",
-    priority: "medium" as Priority,
-    dueDate: "",
-    estimatedHours: "",
-    description: "",
+    title: assignment.title || "",
+    clientId: assignment.clientId,
+    serviceName: assignment.serviceName,
+    period: assignment.period,
+    assigneeId: assignment.assigneeId,
+    reviewerId: assignment.reviewerId || "",
+    priority: assignment.priority,
+    dueDate: assignment.dueDate,
+    estimatedHours: assignment.estimatedHours?.toString() || "",
   });
-  const [tasks, setTasks] = useState<{ id: string; title: string }[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(assignment.tasks || []);
   const [newTask, setNewTask] = useState("");
   const [error, setError] = useState("");
 
@@ -53,7 +44,7 @@ export function AssignmentFormModal({ onClose }: Props) {
 
   function addTask() {
     if (!newTask.trim()) return;
-    setTasks([...tasks, { id: `t${Date.now()}`, title: newTask.trim() }]);
+    setTasks([...tasks, { id: `t${Date.now()}`, title: newTask.trim(), completed: false }]);
     setNewTask("");
   }
 
@@ -69,10 +60,6 @@ export function AssignmentFormModal({ onClose }: Props) {
       setError("Please fill all required fields.");
       return;
     }
-    if (!form.description.trim()) {
-      setError("Please add a description.");
-      return;
-    }
     if (tasks.length === 0) {
       setError("Please add at least one checklist item.");
       return;
@@ -83,27 +70,28 @@ export function AssignmentFormModal({ onClose }: Props) {
     const reviewer = staff.find((s) => s.id === form.reviewerId);
 
     try {
-      await createAssignment({
-        title: form.title,
-        estimatedHours: form.estimatedHours ? parseFloat(form.estimatedHours) : undefined,
-        clientId: form.clientId,
-        clientName: client?.name || "",
-        serviceName: form.serviceName,
-        period: form.period,
-        assigneeId: form.assigneeId,
-        assigneeName: assignee?.name || "",
-        assignedById: currentUser.id,
-        assignedByName: currentUser.name,
-        reviewerId: form.reviewerId || undefined,
-        reviewerName: reviewer?.name || undefined,
-        priority: form.priority,
-        dueDate: form.dueDate,
-        status: "not_started",
-        tasks: tasks.map((t) => ({ ...t, completed: false } as Task)),
+      await updateAssignment({
+        id: assignment.id,
+        patch: {
+          title: form.title,
+          clientId: form.clientId,
+          clientName: client?.name || assignment.clientName,
+          serviceName: form.serviceName,
+          period: form.period,
+          assigneeId: form.assigneeId,
+          assigneeName: assignee?.name || assignment.assigneeName,
+          reviewerId: form.reviewerId || undefined,
+          reviewerName: reviewer?.name || undefined,
+          priority: form.priority,
+          dueDate: form.dueDate,
+          estimatedHours: form.estimatedHours ? parseFloat(form.estimatedHours) : undefined,
+          tasks,
+          updatedAt: new Date().toISOString().split("T")[0],
+        },
       }).unwrap();
       onClose();
     } catch {
-      setError("Failed to create assignment.");
+      setError("Failed to update assignment.");
     }
   }
 
@@ -112,19 +100,16 @@ export function AssignmentFormModal({ onClose }: Props) {
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl border bg-card p-6 shadow-lg mx-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Create Assignment</h2>
+          <h2 className="text-lg font-semibold">Edit Assignment</h2>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded"><X className="h-5 w-5" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Title */}
           <div>
             <label className="text-sm font-medium">Assignment Title *</label>
             <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="e.g. Statutory Audit FY 2025-26, GST Return Q2 Filing"
               className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
 
-          {/* Client & Service */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="text-sm font-medium">Client *</label>
@@ -144,7 +129,6 @@ export function AssignmentFormModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Period, Due Date & Estimate */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="text-sm font-medium">Period</label>
@@ -167,22 +151,14 @@ export function AssignmentFormModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="text-sm font-medium">Description / Notes *</label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={3} placeholder="Brief description of the work, special instructions, or scope notes..."
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
-          </div>
-
           {/* Checklist */}
           <div>
-            <label className="text-sm font-medium">Checklist *</label>
+            <label className="text-sm font-medium">Checklist</label>
             <div className="mt-2 space-y-2">
               {tasks.map((task, idx) => (
                 <div key={task.id} className="flex items-center gap-2 rounded-lg border px-3 py-2">
                   <span className="text-xs text-muted-foreground w-5">{idx + 1}.</span>
-                  <span className="flex-1 text-sm">{task.title}</span>
+                  <span className={`flex-1 text-sm ${task.completed ? "line-through text-muted-foreground" : ""}`}>{task.title}</span>
                   <button type="button" onClick={() => removeTask(task.id)} className="p-1 text-muted-foreground hover:text-red-500">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -200,7 +176,6 @@ export function AssignmentFormModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Assignment Team */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="text-sm font-medium">Assign To *</label>
@@ -220,7 +195,6 @@ export function AssignmentFormModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Priority */}
           <div>
             <label className="text-sm font-medium">Priority</label>
             <div className="mt-2 flex gap-3">
@@ -240,7 +214,7 @@ export function AssignmentFormModal({ onClose }: Props) {
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancel</button>
             <button type="submit" disabled={isLoading} className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-              {isLoading ? "Creating..." : "Create Assignment"}
+              {isLoading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
