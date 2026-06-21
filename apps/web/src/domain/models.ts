@@ -10,6 +10,12 @@ export interface User {
 
 export type UserRole = "partner" | "manager" | "staff" | "trainee";
 
+export interface Staff extends User {
+  phone: string;
+  dateOfJoining: string;
+  status: "active" | "inactive";
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -30,7 +36,12 @@ export interface ServiceMaster {
   category: string;
   frequency: "monthly" | "quarterly" | "annual" | "occasional";
   department: string;
+  description?: string;
+  clientCount: number;
+  status: "active" | "inactive";
 }
+
+export type Priority = "high" | "medium" | "low";
 
 export interface Assignment {
   id: string;
@@ -40,9 +51,12 @@ export interface Assignment {
   period: string;
   assigneeId: string;
   assigneeName: string;
+  assignedById?: string;
+  assignedByName?: string;
   reviewerId?: string;
   reviewerName?: string;
   status: AssignmentStatus;
+  priority: Priority;
   dueDate: string;
   createdAt: string;
   updatedAt: string;
@@ -52,14 +66,13 @@ export interface Assignment {
 }
 
 export const ASSIGNMENT_STATUS = {
-  DRAFT: "draft",
-  ASSIGNED: "assigned",
+  NOT_STARTED: "not_started",
   IN_PROGRESS: "in_progress",
+  QUERY_HOLD: "query_hold",
   WAITING_FOR_INFO: "waiting_for_info",
-  QUERY_RAISED: "query_raised",
-  UNDER_REVIEW: "under_review",
   COMPLETED: "completed",
-  CLOSED: "closed",
+  REVIEWED: "reviewed",
+  BILLED: "billed",
 } as const;
 
 export type AssignmentStatus = (typeof ASSIGNMENT_STATUS)[keyof typeof ASSIGNMENT_STATUS];

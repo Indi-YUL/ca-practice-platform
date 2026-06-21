@@ -6,12 +6,19 @@ import { store } from "@/store/store";
 import { App } from "@/App";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <HashRouter>
-        <App />
-      </HashRouter>
-    </Provider>
-  </StrictMode>,
-);
+async function bootstrap() {
+  const { worker, workerOptions } = await import("@/mocks/browser");
+  await worker.start({ ...workerOptions, onUnhandledRequest: "bypass" });
+
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <Provider store={store}>
+        <HashRouter>
+          <App />
+        </HashRouter>
+      </Provider>
+    </StrictMode>,
+  );
+}
+
+bootstrap();

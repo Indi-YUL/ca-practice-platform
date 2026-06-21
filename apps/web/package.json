@@ -53,5 +53,10 @@
     "jsdom": "^25.0.0",
     "@playwright/test": "^1.49.0",
     "msw": "^2.6.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

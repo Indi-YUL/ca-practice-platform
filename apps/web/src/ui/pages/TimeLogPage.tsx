@@ -1,11 +1,10 @@
-import { useAppSelector } from "@/store/hooks";
+import { useGetAssignmentsQuery } from "@/store/api/assignmentApi";
 import { Clock } from "lucide-react";
 
 export function TimeLogPage() {
-  const assignments = useAppSelector((state) => state.assignments.items);
+  const { data: assignments = [] } = useGetAssignmentsQuery();
   const allWorklogs = assignments.flatMap((a) => a.worklogs.map((w) => ({ ...w, clientName: a.clientName, serviceName: a.serviceName })));
   const sorted = [...allWorklogs].sort((a, b) => b.date.localeCompare(a.date));
-
   const totalHours = allWorklogs.reduce((sum, w) => sum + w.hours, 0);
 
   return (
@@ -26,9 +25,7 @@ export function TimeLogPage() {
           {sorted.map((w) => (
             <div key={w.id} className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary/10 p-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                </div>
+                <div className="rounded-lg bg-primary/10 p-2"><Clock className="h-4 w-4 text-primary" /></div>
                 <div>
                   <p className="text-sm font-medium">{w.clientName}</p>
                   <p className="text-xs text-muted-foreground">{w.serviceName} · {w.note}</p>
@@ -40,9 +37,7 @@ export function TimeLogPage() {
               </div>
             </div>
           ))}
-          {sorted.length === 0 && (
-            <div className="p-8 text-center text-muted-foreground">No time entries yet.</div>
-          )}
+          {sorted.length === 0 && <div className="p-8 text-center text-muted-foreground">No time entries yet.</div>}
         </div>
       </div>
     </div>
