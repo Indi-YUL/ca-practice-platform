@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useGetStaffQuery } from "@/store/api/staffApi";
 import { useAppSelector } from "@/store/hooks";
-import { isAdmin } from "@/store/slices/authSlice";
+import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { Search, Plus, Users, Filter } from "lucide-react";
 import { StaffFormModal } from "@/ui/components/shared/StaffFormModal";
@@ -12,8 +12,8 @@ const ROLE_OPTIONS: ("all" | UserRole)[] = ["all", "partner", "manager", "staff"
 const DEPT_OPTIONS = ["all", "Income Tax & TDS", "Auditing & Certification", "GST & Consultancy", "Accounting"];
 
 export function StaffPage() {
-  const { currentUser } = useAppSelector((state) => state.auth);
-  const admin = isAdmin(currentUser);
+  const { permissions } = useAppSelector((state) => state.auth);
+  const canCreate = hasPermission(permissions, "staff", "create");
   const { data: staff = [], isLoading } = useGetStaffQuery();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -37,7 +37,7 @@ export function StaffPage() {
           <h1 className="text-2xl font-bold">Staff Directory</h1>
           <p className="text-sm text-muted-foreground">{activeStaff.length} active members across 2 offices</p>
         </div>
-        {admin && (
+        {canCreate && (
           <button onClick={() => setShowAddModal(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Add Staff
           </button>

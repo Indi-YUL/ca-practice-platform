@@ -1,15 +1,18 @@
-import type { Assignment, ServiceMaster } from "@/domain/models";
+import type { Assignment, ServiceMaster, AppUserAccount, User } from "@/domain/models";
 import type { Staff } from "@/domain/models";
 import { users } from "./users";
 import { clients } from "./clients";
 import { services } from "./services";
 import { assignments as seedAssignments } from "./assignments";
+import { authAccountsSeed } from "./authAccounts";
 
 const STORAGE_KEYS = {
+  users: "cj_users",
   staff: "cj_staff",
   clients: "cj_clients",
   services: "cj_services",
   assignments: "cj_assignments",
+  appUsers: "cj_app_users",
 } as const;
 
 function get<T>(key: string, seed: T[]): T[] {
@@ -37,6 +40,19 @@ const staffSeed: Staff[] = users.map((u) => ({
 }));
 
 export const db = {
+  users: {
+    getAll: (): User[] => get(STORAGE_KEYS.users, users),
+    getById: (id: string): User | undefined => db.users.getAll().find((u) => u.id === id),
+    create: (item: User) => { const all = db.users.getAll(); all.push(item); set(STORAGE_KEYS.users, all); return item; },
+    update: (id: string, patch: Partial<User>) => {
+      const all = db.users.getAll();
+      const idx = all.findIndex((u) => u.id === id);
+      if (idx === -1) return null;
+      all[idx] = { ...all[idx], ...patch };
+      set(STORAGE_KEYS.users, all);
+      return all[idx];
+    },
+  },
   staff: {
     getAll: (): Staff[] => get(STORAGE_KEYS.staff, staffSeed),
     getById: (id: string): Staff | undefined => db.staff.getAll().find((s) => s.id === id),
@@ -87,6 +103,21 @@ export const db = {
       if (idx === -1) return null;
       all[idx] = { ...all[idx], ...patch };
       set(STORAGE_KEYS.assignments, all);
+      return all[idx];
+    },
+  },
+  appUsers: {
+    getAll: (): AppUserAccount[] => get(STORAGE_KEYS.appUsers, authAccountsSeed),
+    getById: (id: string) => db.appUsers.getAll().find((a) => a.id === id),
+    getByUsername: (username: string) => db.appUsers.getAll().find((a) => a.username.toLowerCase() === username.toLowerCase()),
+    getByUserId: (userId: string) => db.appUsers.getAll().find((a) => a.userId === userId),
+    create: (item: AppUserAccount) => { const all = db.appUsers.getAll(); all.push(item); set(STORAGE_KEYS.appUsers, all); return item; },
+    update: (id: string, patch: Partial<AppUserAccount>) => {
+      const all = db.appUsers.getAll();
+      const idx = all.findIndex((a) => a.id === id);
+      if (idx === -1) return null;
+      all[idx] = { ...all[idx], ...patch };
+      set(STORAGE_KEYS.appUsers, all);
       return all[idx];
     },
   },

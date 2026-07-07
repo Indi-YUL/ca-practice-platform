@@ -11,6 +11,61 @@ export interface User {
 
 export type UserRole = "partner" | "manager" | "staff" | "trainee";
 
+export interface ResourcePermissions {
+  create: boolean;
+  edit: boolean;
+}
+
+export type PermissionResource = "clients" | "staff" | "services" | "assignments";
+
+export interface UserPermissions {
+  clients: ResourcePermissions;
+  staff: ResourcePermissions;
+  services: ResourcePermissions;
+  assignments: ResourcePermissions;
+}
+
+export interface AppUserAccount {
+  id: string;
+  userId: string;
+  username: string;
+  password: string;
+  isAdmin: boolean;
+  permissions: UserPermissions;
+  status: "active" | "inactive";
+}
+
+export interface AuthSession {
+  accountId: string;
+  user: User;
+  username: string;
+  isAdmin: boolean;
+  permissions: UserPermissions;
+}
+
+export const DEFAULT_PASSWORD = "Cjca@1234";
+
+export const FULL_PERMISSIONS: UserPermissions = {
+  clients: { create: true, edit: true },
+  staff: { create: true, edit: true },
+  services: { create: true, edit: true },
+  assignments: { create: true, edit: true },
+};
+
+export const NO_PERMISSIONS: UserPermissions = {
+  clients: { create: false, edit: false },
+  staff: { create: false, edit: false },
+  services: { create: false, edit: false },
+  assignments: { create: false, edit: false },
+};
+
+export const MANAGER_PERMISSIONS: UserPermissions = {
+  clients: { create: false, edit: false },
+  staff: { create: false, edit: false },
+  services: { create: false, edit: false },
+  assignments: { create: true, edit: true },
+};
+
 export interface Staff extends User {
   phone: string;
   dateOfJoining: string;

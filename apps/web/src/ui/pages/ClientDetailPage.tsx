@@ -3,15 +3,15 @@ import { useParams, Link } from "react-router-dom";
 import { useGetClientByIdQuery } from "@/store/api/clientApi";
 import { useGetAssignmentsQuery } from "@/store/api/assignmentApi";
 import { useAppSelector } from "@/store/hooks";
-import { isAdmin } from "@/store/slices/authSlice";
+import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Building2, Phone, MapPin, Edit2 } from "lucide-react";
 import { ClientFormModal } from "@/ui/components/shared/ClientFormModal";
 
 export function ClientDetailPage() {
   const { id } = useParams();
-  const { currentUser } = useAppSelector((state) => state.auth);
-  const admin = isAdmin(currentUser);
+  const { permissions } = useAppSelector((state) => state.auth);
+  const admin = hasPermission(permissions, "clients", "edit");
   const { data: client, isLoading } = useGetClientByIdQuery(id!);
   const { data: allAssignments = [] } = useGetAssignmentsQuery();
   const [showEdit, setShowEdit] = useState(false);

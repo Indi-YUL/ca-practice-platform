@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useGetServicesQuery, useCreateServiceMutation, useUpdateServiceMutation } from "@/store/api/serviceApi";
 import { useAppSelector } from "@/store/hooks";
-import { isAdmin } from "@/store/slices/authSlice";
+import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { Plus, X, Edit2, Layers } from "lucide-react";
 import type { ServiceMaster } from "@/domain/models";
@@ -11,8 +11,9 @@ const FREQUENCIES = ["monthly", "quarterly", "annual", "occasional"] as const;
 const DEPARTMENTS = ["Income Tax & TDS", "Auditing & Certification", "GST & Consultancy", "Accounting"];
 
 export function ServiceMasterPage() {
-  const { currentUser } = useAppSelector((state) => state.auth);
-  const admin = isAdmin(currentUser);
+  const { permissions } = useAppSelector((state) => state.auth);
+  const canCreate = hasPermission(permissions, "services", "create");
+  const canEdit = hasPermission(permissions, "services", "edit");
   const { data: services = [], isLoading } = useGetServicesQuery();
   const [createService] = useCreateServiceMutation();
   const [updateService] = useUpdateServiceMutation();
@@ -41,7 +42,7 @@ export function ServiceMasterPage() {
           <h1 className="text-2xl font-bold">Service Master</h1>
           <p className="text-sm text-muted-foreground">{activeServices.length} services across {CATEGORIES.length} categories</p>
         </div>
-        {admin && (
+        {canCreate && (
           <button onClick={() => { setEditingService(null); setShowForm(true); }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Add Service
@@ -86,7 +87,7 @@ export function ServiceMasterPage() {
                     <p className="text-sm font-medium">{service.clientCount}</p>
                     <p className="text-xs text-muted-foreground">clients</p>
                   </div>
-                  {admin && (
+                  {canEdit && (
                     <button onClick={() => handleEdit(service)} className="rounded-lg p-2 hover:bg-muted">
                       <Edit2 className="h-4 w-4 text-muted-foreground" />
                     </button>

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useGetAssignmentsQuery } from "@/store/api/assignmentApi";
+import { useAppSelector } from "@/store/hooks";
+import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { Search, Filter, Plus } from "lucide-react";
 import { AssignmentFormModal } from "@/ui/components/shared/AssignmentFormModal";
@@ -9,6 +11,8 @@ const STATUS_OPTIONS = ["all", "not_started", "in_progress", "query_hold", "wait
 const PRIORITY_OPTIONS = ["all", "high", "medium", "low"];
 
 export function AssignmentsPage() {
+  const { permissions } = useAppSelector((state) => state.auth);
+  const canCreate = hasPermission(permissions, "assignments", "create");
   const { data: assignments = [], isLoading } = useGetAssignmentsQuery();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -32,9 +36,11 @@ export function AssignmentsPage() {
           <h1 className="text-2xl font-bold">Assignments</h1>
           <p className="text-sm text-muted-foreground">{assignments.length} total work items</p>
         </div>
-        <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Create Assignment
-        </button>
+        {canCreate && (
+          <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Create Assignment
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
