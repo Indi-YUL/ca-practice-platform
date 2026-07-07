@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useCreateStaffMutation } from "@/store/api/staffApi";
-import type { UserRole } from "@/domain/models";
+import { useGetAppUsersQuery } from "@/store/api/appUserApi";
+import { useGetStaffQuery } from "@/store/api/staffApi";
+import type { AppUserListItem } from "@/store/api/appUserApi";
 import { X, ChevronDown } from "lucide-react";
 
 interface Props {
@@ -73,30 +75,49 @@ function MultiSelectDropdown({ label, options, selected, onChange, hint }: {
 }
 
 export function StaffFormModal({ onClose }: Props) {
+  const { data: appUsers = [] } = useGetAppUsersQuery();
+  const { data: staff = [] } = useGetStaffQuery();
   const [createStaff, { isLoading }] = useCreateStaffMutation();
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUser, setSelectedUser] = useState<AppUserListItem | null>(null);
   const [form, setForm] = useState({
-    name: "",
-    email: "",
     phone: "",
-    role: "staff" as UserRole,
-    office: "Mehsana",
     dateOfJoining: new Date().toISOString().split("T")[0],
     departments: [] as string[],
     services: [] as string[],
   });
   const [error, setError] = useState("");
 
+  const activeStaffIds = new Set(staff.filter((s) => s.status === "active").map((s) => s.id));
+  const availableUsers = appUsers.filter((u) => u.status === "active" && !activeStaffIds.has(u.userId));
+
   useEffect(() => {
-    if (form.role === "partner") {
+    if (selectedUser?.role === "partner") {
       setForm((f) => ({ ...f, departments: [...DEPARTMENTS], services: [...SERVICES] }));
     }
-  }, [form.role]);
+  }, [selectedUser?.role]);
+
+  function handleUserSelect(userId: string) {
+    setSelectedUserId(userId);
+    const user = availableUsers.find((u) => u.userId === userId) ?? null;
+    setSelectedUser(user);
+    setForm({
+      phone: "",
+      dateOfJoining: new Date().toISOString().split("T")[0],
+      departments: user?.role === "partner" ? [...DEPARTMENTS] : user?.department ? [user.department] : [],
+      services: user?.role === "partner" ? [...SERVICES] : [],
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!form.name || !form.email || !form.phone) {
-      setError("Please fill all required fields.");
+    if (!selectedUserId) {
+      setError("Please select an existing user.");
+      return;
+    }
+    if (!form.phone) {
+      setError("Please enter a phone number.");
       return;
     }
     if (form.departments.length === 0) {
@@ -105,12 +126,15 @@ export function StaffFormModal({ onClose }: Props) {
     }
     try {
       await createStaff({
-        ...form,
-        department: form.departments[0],
+        userId: selectedUserId,
+        phone: form.phone,
+        dateOfJoining: form.dateOfJoining,
+        departments: form.departments,
+        services: form.services,
       }).unwrap();
       onClose();
     } catch {
-      setError("Failed to create staff member.");
+      setError("Failed to add staff member. User may already be active staff.");
     }
   }
 
@@ -122,49 +146,75 @@ export function StaffFormModal({ onClose }: Props) {
           <h2 className="text-lg font-semibold">Add Staff Member</h2>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded"><X className="h-5 w-5" /></button>
         </div>
+
+        <p className="mb-4 text-sm text-muted-foreground">
+          Select an existing user from User Management, then configure their staff profile.
+        </p>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Full Name *</label>
-            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" placeholder="e.g. Priya Sharma" />
+            <label className="text-sm font-medium">Select User *</label>
+            <select
+              value={selectedUserId}
+              onChange={(e) => handleUserSelect(e.target.value)}
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Choose an existing user...</option>
+              {availableUsers.map((u) => (
+                <option key={u.userId} value={u.userId}>
+                  {u.name} ({u.username}) — {u.role}
+                </option>
+              ))}
+            </select>
+            {availableUsers.length === 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                No users available. Create a user account in User Management first.
+              </p>
+            )}
           </div>
+
+          {selectedUser && (
+            <div className="rounded-lg border bg-muted/30 p-4 grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Name</p>
+                <p className="font-medium">{selectedUser.name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="font-medium">{selectedUser.email}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Role</p>
+                <p className="font-medium capitalize">{selectedUser.role}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Office</p>
+                <p className="font-medium">{selectedUser.office}</p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">Email *</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" placeholder="name@cjca.in" />
-            </div>
-            <div>
               <label className="text-sm font-medium">Phone *</label>
-              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" placeholder="9876543210" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-sm font-medium">Role</label>
-              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="partner">Partner</option>
-                <option value="manager">Manager</option>
-                <option value="staff">Staff</option>
-                <option value="trainee">Trainee</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Office</label>
-              <select value={form.office} onChange={(e) => setForm({ ...form, office: e.target.value })}
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="Mehsana">Mehsana</option>
-                <option value="Ahmedabad">Ahmedabad</option>
-              </select>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                disabled={!selectedUserId}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                placeholder="9876543210"
+              />
             </div>
             <div>
               <label className="text-sm font-medium">Date of Joining</label>
-              <input type="date" value={form.dateOfJoining} onChange={(e) => setForm({ ...form, dateOfJoining: e.target.value })}
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input
+                type="date"
+                value={form.dateOfJoining}
+                onChange={(e) => setForm({ ...form, dateOfJoining: e.target.value })}
+                disabled={!selectedUserId}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              />
             </div>
           </div>
 
@@ -173,7 +223,7 @@ export function StaffFormModal({ onClose }: Props) {
             options={DEPARTMENTS}
             selected={form.departments}
             onChange={(departments) => setForm({ ...form, departments })}
-            hint={form.role === "partner" ? "(All selected for Partners)" : undefined}
+            hint={selectedUser?.role === "partner" ? "(All selected for Partners)" : undefined}
           />
 
           <MultiSelectDropdown
@@ -181,14 +231,18 @@ export function StaffFormModal({ onClose }: Props) {
             options={SERVICES}
             selected={form.services}
             onChange={(services) => setForm({ ...form, services })}
-            hint={form.role === "partner" ? "(All selected for Partners)" : undefined}
+            hint={selectedUser?.role === "partner" ? "(All selected for Partners)" : undefined}
           />
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancel</button>
-            <button type="submit" disabled={isLoading} className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={isLoading || !selectedUserId || availableUsers.length === 0}
+              className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
               {isLoading ? "Adding..." : "Add Staff"}
             </button>
           </div>

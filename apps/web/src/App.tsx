@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/ui/layouts/AppLayout";
+import { ProtectedRoute, PublicRoute } from "@/ui/components/ProtectedRoute";
+import { LoginPage } from "@/ui/pages/LoginPage";
 import { DashboardPage } from "@/ui/pages/DashboardPage";
 import { ClientsPage } from "@/ui/pages/ClientsPage";
 import { ClientDetailPage } from "@/ui/pages/ClientDetailPage";
@@ -11,24 +13,36 @@ import { ServiceMasterPage } from "@/ui/pages/ServiceMasterPage";
 import { CalendarPage } from "@/ui/pages/CalendarPage";
 import { TimeLogPage } from "@/ui/pages/TimeLogPage";
 import { AiBriefingPage } from "@/ui/pages/AiBriefingPage";
+import { ProfilePage } from "@/ui/pages/ProfilePage";
+import { UserManagementPage } from "@/ui/pages/UserManagementPage";
 
 export function App() {
   return (
     <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/clients" element={<ClientsPage />} />
-        <Route path="/clients/:id" element={<ClientDetailPage />} />
-        <Route path="/assignments" element={<AssignmentsPage />} />
-        <Route path="/assignments/:id" element={<AssignmentDetailPage />} />
-        <Route path="/staff" element={<StaffPage />} />
-        <Route path="/staff/:id" element={<StaffDetailPage />} />
-        <Route path="/services" element={<ServiceMasterPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/time" element={<TimeLogPage />} />
-        <Route path="/ai" element={<AiBriefingPage />} />
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<LoginPage />} />
       </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/clients/:id" element={<ClientDetailPage />} />
+          <Route path="/assignments" element={<AssignmentsPage />} />
+          <Route path="/assignments/:id" element={<AssignmentDetailPage />} />
+          <Route path="/staff" element={<StaffPage />} />
+          <Route path="/staff/:id" element={<StaffDetailPage />} />
+          <Route path="/services" element={<ServiceMasterPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/time" element={<TimeLogPage />} />
+          <Route path="/ai" element={<AiBriefingPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/users" element={<UserManagementPage />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

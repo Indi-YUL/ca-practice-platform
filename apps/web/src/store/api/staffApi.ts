@@ -11,7 +11,13 @@ export const staffApi = baseApi.injectEndpoints({
       query: (id) => `/staff/${id}`,
       providesTags: (_r, _e, id) => [{ type: "Staff", id }],
     }),
-    createStaff: build.mutation<Staff, Partial<Staff>>({
+    createStaff: build.mutation<Staff, {
+      userId: string;
+      phone: string;
+      dateOfJoining: string;
+      departments: string[];
+      services: string[];
+    }>({
       query: (body) => ({ url: "/staff", method: "POST", body }),
       invalidatesTags: ["Staff"],
     }),

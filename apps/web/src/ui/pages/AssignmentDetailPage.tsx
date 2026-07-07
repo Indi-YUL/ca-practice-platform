@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import { useAppSelector } from "@/store/hooks";
+import { hasPermission } from "@/lib/permissions";
 import { useGetAssignmentByIdQuery, useUpdateAssignmentMutation, useAddCommentMutation } from "@/store/api/assignmentApi";
 import type { AssignmentStatus, Comment } from "@/domain/models";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,7 @@ const STATUS_FLOW: AssignmentStatus[] = ["not_started", "in_progress", "complete
 
 export function AssignmentDetailPage() {
   const { id } = useParams();
-  const { currentUser } = useAppSelector((state) => state.auth);
+  const { currentUser, permissions } = useAppSelector((state) => state.auth);
   const { data: assignment, isLoading } = useGetAssignmentByIdQuery(id!);
   const [updateAssignment] = useUpdateAssignmentMutation();
   const [addComment] = useAddCommentMutation();
@@ -22,7 +23,8 @@ export function AssignmentDetailPage() {
   const [showTimeLogList, setShowTimeLogList] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
-  const isOwner = currentUser.id === assignment?.assignedById || currentUser.role === "partner";
+  const canEdit = hasPermission(permissions, "assignments", "edit") ||
+    currentUser.id === assignment?.assignedById;
 
   if (isLoading) return <div className="flex items-center justify-center p-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!assignment) return <div className="p-8 text-center text-muted-foreground">Assignment not found.</div>;
@@ -70,7 +72,7 @@ export function AssignmentDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isOwner && (
+            {canEdit && (
               <button onClick={() => setShowEdit(true)} className="rounded-lg border p-2 hover:bg-muted" title="Edit assignment">
                 <Edit2 className="h-4 w-4" />
               </button>
