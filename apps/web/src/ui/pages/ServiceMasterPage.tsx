@@ -7,7 +7,13 @@ import { Plus, X, Edit2, Layers } from "lucide-react";
 import type { ServiceMaster } from "@/domain/models";
 
 const CATEGORIES = ["Audit", "Tax", "GST", "Accounting", "Certification", "Consultancy"];
-const FREQUENCIES = ["monthly", "quarterly", "annual", "occasional"] as const;
+const FREQUENCIES = ["monthly", "quarterly", "annual", "one_time"] as const;
+const FREQUENCY_LABELS: Record<typeof FREQUENCIES[number], string> = {
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  annual: "Annual",
+  one_time: "One-Time",
+};
 const DEPARTMENTS = ["Income Tax & TDS", "Auditing & Certification", "GST & Consultancy", "Accounting"];
 
 export function ServiceMasterPage() {
@@ -78,7 +84,7 @@ export function ServiceMasterPage() {
                 <div>
                   <p className="text-sm font-medium">{service.name}</p>
                   <div className="mt-1 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{service.frequency}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{FREQUENCY_LABELS[service.frequency] ?? service.frequency}</span>
                     <span className="text-xs text-muted-foreground">{service.department}</span>
                   </div>
                 </div>
@@ -128,7 +134,7 @@ function ServiceFormModal({ service, onClose, onCreate, onUpdate }: {
   const [form, setForm] = useState({
     name: service?.name || "",
     category: service?.category || "Audit",
-    frequency: service?.frequency || ("annual" as typeof FREQUENCIES[number]),
+    frequency: (service?.frequency === ("occasional" as string) ? "one_time" : service?.frequency) || ("annual" as typeof FREQUENCIES[number]),
     department: service?.department || "Auditing & Certification",
     description: service?.description || "",
   });
@@ -163,6 +169,7 @@ function ServiceFormModal({ service, onClose, onCreate, onUpdate }: {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium">Category</label>
+              <p className="text-xs text-muted-foreground mt-0.5">Groups services for filtering and reporting (Audit, Tax, GST, etc.)</p>
               <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
@@ -170,9 +177,9 @@ function ServiceFormModal({ service, onClose, onCreate, onUpdate }: {
             </div>
             <div>
               <label className="text-sm font-medium">Frequency</label>
-              <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}
+              <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value as typeof FREQUENCIES[number] })}
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                {FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
+                {FREQUENCIES.map((f) => <option key={f} value={f}>{FREQUENCY_LABELS[f]}</option>)}
               </select>
             </div>
           </div>

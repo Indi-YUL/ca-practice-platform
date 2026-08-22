@@ -5,7 +5,7 @@ import { useGetAssignmentsQuery } from "@/store/api/assignmentApi";
 import { useAppSelector } from "@/store/hooks";
 import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Building2, Phone, MapPin, Edit2 } from "lucide-react";
+import { ArrowLeft, Building2, Phone, MapPin, Edit2, Mail, User } from "lucide-react";
 import { ClientFormModal } from "@/ui/components/shared/ClientFormModal";
 
 export function ClientDetailPage() {
@@ -34,10 +34,13 @@ export function ClientDetailPage() {
             <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
               <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{client.legalType}</span>
               <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{client.office}</span>
-              <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{client.contactPerson} · {client.phone}</span>
+              <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" />{client.contactPerson}</span>
+              <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{client.email}</span>
+              <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{client.phone}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <span className={cn("rounded-full px-3 py-1 text-xs font-medium capitalize", client.status === "active" ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-100 text-gray-600 border")}>{client.status}</span>
             {client.groupName && <span className="rounded-full border px-3 py-1 text-xs font-medium">{client.groupName}</span>}
             {admin && (
               <button onClick={() => setShowEdit(true)} className="rounded-lg border p-2 hover:bg-muted">
@@ -46,10 +49,19 @@ export function ClientDetailPage() {
             )}
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {client.pan && <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">PAN</p><p className="font-mono text-sm font-medium">{client.pan}</p></div>}
           {client.gstin && <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">GSTIN</p><p className="font-mono text-sm font-medium">{client.gstin}</p></div>}
+          {client.tan && <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">TAN</p><p className="font-mono text-sm font-medium">{client.tan}</p></div>}
+          {client.dateOfIncorporation && <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Date of Incorporation</p><p className="text-sm font-medium">{client.dateOfIncorporation}</p></div>}
+          {client.assignedPartnerName && <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Assigned Partner</p><p className="text-sm font-medium">{client.assignedPartnerName}</p></div>}
         </div>
+        {(client.registeredAddress || client.correspondenceAddress) && (
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {client.registeredAddress && <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Registered Address</p><p className="text-sm">{client.registeredAddress}</p></div>}
+            {client.correspondenceAddress && <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Correspondence Address</p><p className="text-sm">{client.correspondenceAddress}</p></div>}
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border bg-card">

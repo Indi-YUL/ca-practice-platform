@@ -36,12 +36,16 @@ export function AssignmentFormModal({ onClose }: Props) {
     clientId: "",
     serviceName: "",
     period: "FY 2025-26",
+    startDate: new Date().toISOString().split("T")[0],
     assigneeId: "",
     reviewerId: "",
     priority: "medium" as Priority,
     dueDate: "",
     estimatedHours: "",
+    feeAmount: "",
+    recurringFrequency: "annual" as "monthly" | "quarterly" | "annual" | "one_time",
     description: "",
+    requiredDocuments: "",
   });
   const [tasks, setTasks] = useState<{ id: string; title: string }[]>([]);
   const [newTask, setNewTask] = useState("");
@@ -90,6 +94,7 @@ export function AssignmentFormModal({ onClose }: Props) {
         clientName: client?.name || "",
         serviceName: form.serviceName,
         period: form.period,
+        startDate: form.startDate,
         assigneeId: form.assigneeId,
         assigneeName: assignee?.name || "",
         assignedById: currentUser.id,
@@ -98,6 +103,13 @@ export function AssignmentFormModal({ onClose }: Props) {
         reviewerName: reviewer?.name || undefined,
         priority: form.priority,
         dueDate: form.dueDate,
+        feeAmount: form.feeAmount ? parseFloat(form.feeAmount) : undefined,
+        recurringFrequency: form.recurringFrequency,
+        description: form.description.trim(),
+        requiredDocuments: form.requiredDocuments
+          .split("\n")
+          .map((d) => d.trim())
+          .filter(Boolean),
         status: "not_started",
         tasks: tasks.map((t) => ({ ...t, completed: false } as Task)),
       }).unwrap();
@@ -144,8 +156,8 @@ export function AssignmentFormModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Period, Due Date & Estimate */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {/* Period, Dates, Estimate & Fee */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="text-sm font-medium">Period</label>
               <select value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value })}
@@ -154,15 +166,40 @@ export function AssignmentFormModal({ onClose }: Props) {
               </select>
             </div>
             <div>
+              <label className="text-sm font-medium">Start Date</label>
+              <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div>
               <label className="text-sm font-medium">Due Date *</label>
               <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
             <div>
+              <label className="text-sm font-medium">Recurring Frequency</label>
+              <select value={form.recurringFrequency} onChange={(e) => setForm({ ...form, recurringFrequency: e.target.value as typeof form.recurringFrequency })}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="annual">Annual</option>
+                <option value="one_time">One-Time</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
               <label className="text-sm font-medium">Estimate (hrs)</label>
               <input type="number" step="0.5" min="0.5" value={form.estimatedHours}
                 onChange={(e) => setForm({ ...form, estimatedHours: e.target.value })}
                 placeholder="e.g. 8"
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Fee / Billing Amount (₹)</label>
+              <input type="number" step="100" min="0" value={form.feeAmount}
+                onChange={(e) => setForm({ ...form, feeAmount: e.target.value })}
+                placeholder="e.g. 25000"
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
@@ -173,6 +210,15 @@ export function AssignmentFormModal({ onClose }: Props) {
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3} placeholder="Brief description of the work, special instructions, or scope notes..."
               className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+          </div>
+
+          {/* Required Documents */}
+          <div>
+            <label className="text-sm font-medium">Required Documents / Attachments</label>
+            <p className="text-xs text-muted-foreground mt-0.5">One document per line — what the client must submit for this assignment</p>
+            <textarea value={form.requiredDocuments} onChange={(e) => setForm({ ...form, requiredDocuments: e.target.value })}
+              rows={3} placeholder={"Trial balance\nBank statements\nGST returns\nFixed asset register"}
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none font-mono" />
           </div>
 
           {/* Checklist */}

@@ -13,10 +13,15 @@ export const staffApi = baseApi.injectEndpoints({
     }),
     createStaff: build.mutation<Staff, {
       userId: string;
+      employeeId: string;
       phone: string;
       dateOfJoining: string;
+      designation: string;
+      employmentType: "full_time" | "articleship" | "intern";
+      reportingManagerId?: string;
       departments: string[];
       services: string[];
+      bankDetails?: Staff["bankDetails"];
     }>({
       query: (body) => ({ url: "/staff", method: "POST", body }),
       invalidatesTags: ["Staff"],

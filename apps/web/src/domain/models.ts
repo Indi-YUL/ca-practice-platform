@@ -66,12 +66,27 @@ export const MANAGER_PERMISSIONS: UserPermissions = {
   assignments: { create: true, edit: true },
 };
 
+export interface BankDetails {
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  accountHolderName?: string;
+}
+
+export type EmploymentType = "full_time" | "articleship" | "intern";
+
 export interface Staff extends User {
+  employeeId: string;
   phone: string;
   dateOfJoining: string;
   status: "active" | "inactive";
   departments: string[];
   services: string[];
+  designation?: string;
+  employmentType?: EmploymentType;
+  reportingManagerId?: string;
+  reportingManagerName?: string;
+  bankDetails?: BankDetails;
 }
 
 export interface Client {
@@ -80,24 +95,36 @@ export interface Client {
   legalType: string;
   pan?: string;
   gstin?: string;
+  tan?: string;
   office: string;
   contactPerson: string;
+  email: string;
   phone: string;
+  registeredAddress?: string;
+  correspondenceAddress?: string;
+  dateOfIncorporation?: string;
+  assignedPartnerId?: string;
+  assignedPartnerName?: string;
+  status: "active" | "inactive";
   groupName?: string;
   services: string[];
   assignmentsCount: number;
 }
 
+export type ServiceFrequency = "monthly" | "quarterly" | "annual" | "one_time";
+
 export interface ServiceMaster {
   id: string;
   name: string;
   category: string;
-  frequency: "monthly" | "quarterly" | "annual" | "occasional";
+  frequency: ServiceFrequency;
   department: string;
   description?: string;
   clientCount: number;
   status: "active" | "inactive";
 }
+
+export type RecurringFrequency = ServiceFrequency;
 
 export type Priority = "high" | "medium" | "low";
 
@@ -109,6 +136,12 @@ export interface Assignment {
   clientName: string;
   serviceName: string;
   period: string;
+  startDate?: string;
+  dueDate: string;
+  feeAmount?: number;
+  recurringFrequency?: RecurringFrequency;
+  requiredDocuments?: string[];
+  description?: string;
   assigneeId: string;
   assigneeName: string;
   assignedById?: string;
@@ -117,7 +150,6 @@ export interface Assignment {
   reviewerName?: string;
   status: AssignmentStatus;
   priority: Priority;
-  dueDate: string;
   createdAt: string;
   updatedAt: string;
   tasks: Task[];
