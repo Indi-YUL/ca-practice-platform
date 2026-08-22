@@ -11,6 +11,12 @@ interface Props {
 
 const DEPARTMENTS = ["Income Tax & TDS", "Auditing & Certification", "GST & Consultancy", "Accounting"];
 const SERVICES = ["Statutory Audit", "Tax Audit", "Internal Audit", "Trust Audit", "Income Tax Return", "TDS Return", "GST Return", "Accounting & Book-keeping", "Certification (80G/12A)", "FEMA Advisory"];
+const DESIGNATIONS = ["CA", "Article Assistant", "Accountant", "Manager", "Senior Executive", "Executive"];
+const EMPLOYMENT_TYPES = [
+  { value: "full_time", label: "Full-time" },
+  { value: "articleship", label: "Articleship" },
+  { value: "intern", label: "Intern" },
+] as const;
 
 function MultiSelectDropdown({ label, options, selected, onChange, hint }: {
   label: string; options: string[]; selected: string[]; onChange: (val: string[]) => void; hint?: string;
@@ -81,15 +87,24 @@ export function StaffFormModal({ onClose }: Props) {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedUser, setSelectedUser] = useState<AppUserListItem | null>(null);
   const [form, setForm] = useState({
+    employeeId: "",
     phone: "",
     dateOfJoining: new Date().toISOString().split("T")[0],
+    designation: "",
+    employmentType: "full_time" as "full_time" | "articleship" | "intern",
+    reportingManagerId: "",
     departments: [] as string[],
     services: [] as string[],
+    bankName: "",
+    accountNumber: "",
+    ifscCode: "",
+    accountHolderName: "",
   });
   const [error, setError] = useState("");
 
   const activeStaffIds = new Set(staff.filter((s) => s.status === "active").map((s) => s.id));
   const availableUsers = appUsers.filter((u) => u.status === "active" && !activeStaffIds.has(u.userId));
+  const reportingManagers = staff.filter((s) => s.status === "active" && (s.role === "partner" || s.role === "manager"));
 
   useEffect(() => {
     if (selectedUser?.role === "partner") {
@@ -102,10 +117,18 @@ export function StaffFormModal({ onClose }: Props) {
     const user = availableUsers.find((u) => u.userId === userId) ?? null;
     setSelectedUser(user);
     setForm({
+      employeeId: `EMP${String(staff.length + 1).padStart(3, "0")}`,
       phone: "",
       dateOfJoining: new Date().toISOString().split("T")[0],
+      designation: user?.role === "partner" ? "CA" : user?.role === "trainee" ? "Article Assistant" : "Accountant",
+      employmentType: user?.role === "trainee" ? "articleship" : "full_time",
+      reportingManagerId: "",
       departments: user?.role === "partner" ? [...DEPARTMENTS] : user?.department ? [user.department] : [],
       services: user?.role === "partner" ? [...SERVICES] : [],
+      bankName: "",
+      accountNumber: "",
+      ifscCode: "",
+      accountHolderName: user?.name || "",
     });
   }
 
@@ -120,6 +143,14 @@ export function StaffFormModal({ onClose }: Props) {
       setError("Please enter a phone number.");
       return;
     }
+    if (!form.employeeId.trim()) {
+      setError("Please enter an employee / staff ID.");
+      return;
+    }
+    if (!form.designation) {
+      setError("Please select a designation.");
+      return;
+    }
     if (form.departments.length === 0) {
       setError("Please select at least one department.");
       return;
@@ -127,10 +158,22 @@ export function StaffFormModal({ onClose }: Props) {
     try {
       await createStaff({
         userId: selectedUserId,
+        employeeId: form.employeeId.trim(),
         phone: form.phone,
         dateOfJoining: form.dateOfJoining,
+        designation: form.designation,
+        employmentType: form.employmentType,
+        reportingManagerId: form.reportingManagerId || undefined,
         departments: form.departments,
         services: form.services,
+        bankDetails: form.bankName || form.accountNumber || form.ifscCode
+          ? {
+              bankName: form.bankName || undefined,
+              accountNumber: form.accountNumber || undefined,
+              ifscCode: form.ifscCode.toUpperCase() || undefined,
+              accountHolderName: form.accountHolderName || undefined,
+            }
+          : undefined,
       }).unwrap();
       onClose();
     } catch {
@@ -196,6 +239,17 @@ export function StaffFormModal({ onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <label className="text-sm font-medium">Employee / Staff ID *</label>
+              <input
+                type="text"
+                value={form.employeeId}
+                onChange={(e) => setForm({ ...form, employeeId: e.target.value.toUpperCase() })}
+                disabled={!selectedUserId}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                placeholder="EMP001"
+              />
+            </div>
+            <div>
               <label className="text-sm font-medium">Phone *</label>
               <input
                 type="tel"
@@ -206,6 +260,9 @@ export function StaffFormModal({ onClose }: Props) {
                 placeholder="9876543210"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium">Date of Joining</label>
               <input
@@ -215,6 +272,70 @@ export function StaffFormModal({ onClose }: Props) {
                 disabled={!selectedUserId}
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
               />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Designation / Qualification *</label>
+              <select
+                value={form.designation}
+                onChange={(e) => setForm({ ...form, designation: e.target.value })}
+                disabled={!selectedUserId}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              >
+                <option value="">Select...</option>
+                {DESIGNATIONS.map((d) => <option key={d}>{d}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium">Employment Type *</label>
+              <select
+                value={form.employmentType}
+                onChange={(e) => setForm({ ...form, employmentType: e.target.value as typeof form.employmentType })}
+                disabled={!selectedUserId}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              >
+                {EMPLOYMENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Reporting Manager</label>
+              <select
+                value={form.reportingManagerId}
+                onChange={(e) => setForm({ ...form, reportingManagerId: e.target.value })}
+                disabled={!selectedUserId || selectedUser?.role === "partner"}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              >
+                <option value="">Select manager...</option>
+                {reportingManagers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="rounded-lg border p-4 space-y-3">
+            <p className="text-sm font-medium">Bank Details (optional)</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground">Bank Name</label>
+                <input type="text" value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })}
+                  disabled={!selectedUserId} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm disabled:opacity-50" placeholder="HDFC Bank" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Account Holder Name</label>
+                <input type="text" value={form.accountHolderName} onChange={(e) => setForm({ ...form, accountHolderName: e.target.value })}
+                  disabled={!selectedUserId} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm disabled:opacity-50" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Account Number</label>
+                <input type="text" value={form.accountNumber} onChange={(e) => setForm({ ...form, accountNumber: e.target.value })}
+                  disabled={!selectedUserId} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-mono disabled:opacity-50" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">IFSC Code</label>
+                <input type="text" value={form.ifscCode} onChange={(e) => setForm({ ...form, ifscCode: e.target.value.toUpperCase() })}
+                  disabled={!selectedUserId} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-mono disabled:opacity-50" placeholder="HDFC0001234" maxLength={11} />
+              </div>
             </div>
           </div>
 
@@ -231,7 +352,7 @@ export function StaffFormModal({ onClose }: Props) {
             options={SERVICES}
             selected={form.services}
             onChange={(services) => setForm({ ...form, services })}
-            hint={selectedUser?.role === "partner" ? "(All selected for Partners)" : undefined}
+            hint={selectedUser?.role === "partner" ? "(All selected for Partners)" : "Services this staff member can handle — used for assignment routing"}
           />
 
           {error && <p className="text-sm text-red-500">{error}</p>}

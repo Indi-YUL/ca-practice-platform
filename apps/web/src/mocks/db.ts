@@ -7,12 +7,12 @@ import { assignments as seedAssignments } from "./assignments";
 import { authAccountsSeed } from "./authAccounts";
 
 const STORAGE_KEYS = {
-  users: "cj_users",
-  staff: "cj_staff",
-  clients: "cj_clients",
-  services: "cj_services",
-  assignments: "cj_assignments",
-  appUsers: "cj_app_users",
+  users: "cj_users_v2",
+  staff: "cj_staff_v2",
+  clients: "cj_clients_v2",
+  services: "cj_services_v2",
+  assignments: "cj_assignments_v2",
+  appUsers: "cj_app_users_v2",
 } as const;
 
 function get<T>(key: string, seed: T[]): T[] {
@@ -30,11 +30,16 @@ const ALL_DEPARTMENTS = ["Income Tax & TDS", "Auditing & Certification", "GST & 
 const ALL_SERVICES = ["Statutory Audit", "Tax Audit", "Internal Audit", "Trust Audit", "Income Tax Return", "TDS Return", "GST Return", "Accounting & Book-keeping", "Certification (80G/12A)", "FEMA Advisory"];
 
 // Staff seed — extend users with extra fields
-const staffSeed: Staff[] = users.map((u) => ({
+const staffSeed: Staff[] = users.map((u, idx) => ({
   ...u,
-  phone: `98765${String(Math.floor(10000 + Math.random() * 90000))}`,
+  employeeId: `EMP${String(idx + 1).padStart(3, "0")}`,
+  phone: `98765${String(43210 + idx)}`,
   dateOfJoining: u.role === "partner" ? "2010-04-01" : u.role === "manager" ? "2016-06-15" : u.role === "staff" ? "2020-01-10" : "2024-07-01",
   status: "active" as const,
+  designation: u.role === "partner" ? "CA" : u.role === "trainee" ? "Article Assistant" : u.role === "manager" ? "Manager" : "Accountant",
+  employmentType: u.role === "trainee" ? "articleship" as const : "full_time" as const,
+  reportingManagerId: u.role === "partner" ? undefined : u.role === "manager" ? "u1" : u.office === "Ahmedabad" ? "u3" : "u1",
+  reportingManagerName: u.role === "partner" ? undefined : u.role === "manager" ? "CA Rajesh Chauhan" : u.office === "Ahmedabad" ? "CA Amit Patel" : "CA Rajesh Chauhan",
   departments: u.role === "partner" ? ALL_DEPARTMENTS : [u.department],
   services: u.role === "partner" ? ALL_SERVICES : u.role === "manager" ? ALL_SERVICES.slice(0, 6) : ALL_SERVICES.slice(0, 3),
 }));

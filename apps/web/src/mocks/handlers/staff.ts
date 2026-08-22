@@ -18,10 +18,20 @@ export const staffHandlers = [
     await delay(400);
     const body = await request.json() as {
       userId: string;
+      employeeId: string;
       phone: string;
       dateOfJoining: string;
+      designation: string;
+      employmentType: "full_time" | "articleship" | "intern";
+      reportingManagerId?: string;
       departments: string[];
       services: string[];
+      bankDetails?: {
+        bankName?: string;
+        accountNumber?: string;
+        ifscCode?: string;
+        accountHolderName?: string;
+      };
     };
 
     if (!body.userId) {
@@ -43,15 +53,32 @@ export const staffHandlers = [
       return HttpResponse.json({ error: "This user is already an active staff member" }, { status: 409 });
     }
 
-    if (!body.phone || !body.departments?.length) {
-      return HttpResponse.json({ error: "Phone and at least one department are required" }, { status: 400 });
+    if (!body.employeeId || !body.phone || !body.designation || !body.departments?.length) {
+      return HttpResponse.json({ error: "Employee ID, phone, designation, and at least one department are required" }, { status: 400 });
     }
+
+    const duplicateEmployeeId = db.staff.getAll().some(
+      (s) => s.employeeId === body.employeeId && s.id !== body.userId
+    );
+    if (duplicateEmployeeId) {
+      return HttpResponse.json({ error: "Employee ID already in use" }, { status: 409 });
+    }
+
+    const manager = body.reportingManagerId
+      ? db.staff.getById(body.reportingManagerId)
+      : undefined;
 
     const staffRecord = {
       ...user,
       id: body.userId,
+      employeeId: body.employeeId,
       phone: body.phone,
       dateOfJoining: body.dateOfJoining || new Date().toISOString().split("T")[0],
+      designation: body.designation,
+      employmentType: body.employmentType || "full_time",
+      reportingManagerId: body.reportingManagerId,
+      reportingManagerName: manager?.name,
+      bankDetails: body.bankDetails,
       departments: body.departments,
       services: body.services || [],
       status: "active" as const,

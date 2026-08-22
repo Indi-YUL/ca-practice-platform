@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCreateClientMutation, useUpdateClientMutation } from "@/store/api/clientApi";
+import { useGetStaffQuery } from "@/store/api/staffApi";
 import type { Client } from "@/domain/models";
 import { X } from "lucide-react";
 
@@ -14,6 +15,8 @@ interface Props {
 export function ClientFormModal({ client, onClose }: Props) {
   const [createClient, { isLoading: creating }] = useCreateClientMutation();
   const [updateClient, { isLoading: updating }] = useUpdateClientMutation();
+  const { data: staff = [] } = useGetStaffQuery();
+  const partners = staff.filter((s) => s.role === "partner" && s.status === "active");
   const isEditing = !!client;
 
   const [form, setForm] = useState({
@@ -21,9 +24,16 @@ export function ClientFormModal({ client, onClose }: Props) {
     legalType: client?.legalType || "Pvt Ltd",
     pan: client?.pan || "",
     gstin: client?.gstin || "",
+    tan: client?.tan || "",
     office: client?.office || "Mehsana",
     contactPerson: client?.contactPerson || "",
+    email: client?.email || "",
     phone: client?.phone || "",
+    registeredAddress: client?.registeredAddress || "",
+    correspondenceAddress: client?.correspondenceAddress || "",
+    dateOfIncorporation: client?.dateOfIncorporation || "",
+    assignedPartnerId: client?.assignedPartnerId || "",
+    status: client?.status || ("active" as const),
     groupName: client?.groupName || "",
     services: client?.services || [] as string[],
   });
@@ -39,19 +49,35 @@ export function ClientFormModal({ client, onClose }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!form.name || !form.contactPerson || !form.phone) {
+    if (!form.name || !form.contactPerson || !form.email || !form.phone) {
       setError("Please fill all required fields.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError("Please enter a valid email address.");
       return;
     }
     if (form.pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(form.pan)) {
       setError("Invalid PAN format (e.g., ABCDE1234F).");
       return;
     }
+    if (form.tan && !/^[A-Z]{4}[0-9]{5}[A-Z]$/.test(form.tan)) {
+      setError("Invalid TAN format (e.g., MUMM12345A).");
+      return;
+    }
+
+    const partner = partners.find((p) => p.id === form.assignedPartnerId);
+    const payload = {
+      ...form,
+      assignedPartnerName: partner?.name,
+      assignedPartnerId: form.assignedPartnerId || undefined,
+    };
+
     try {
       if (isEditing) {
-        await updateClient({ id: client!.id, patch: form }).unwrap();
+        await updateClient({ id: client!.id, patch: payload }).unwrap();
       } else {
-        await createClient(form).unwrap();
+        await createClient(payload).unwrap();
       }
       onClose();
     } catch {
@@ -94,7 +120,7 @@ export function ClientFormModal({ client, onClose }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-sm font-medium">PAN</label>
               <input type="text" value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value.toUpperCase() })}
@@ -105,6 +131,11 @@ export function ClientFormModal({ client, onClose }: Props) {
               <input type="text" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value.toUpperCase() })}
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" placeholder="24ABCDE1234F1Z5" maxLength={15} />
             </div>
+            <div>
+              <label className="text-sm font-medium">TAN</label>
+              <input type="text" value={form.tan} onChange={(e) => setForm({ ...form, tan: e.target.value.toUpperCase() })}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" placeholder="MUMM12345A" maxLength={10} />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -114,9 +145,53 @@ export function ClientFormModal({ client, onClose }: Props) {
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Full name" />
             </div>
             <div>
+              <label className="text-sm font-medium">Email ID *</label>
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" placeholder="contact@company.com" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
               <label className="text-sm font-medium">Phone *</label>
               <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" placeholder="9876543210" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Date of Incorporation / Registration</label>
+              <input type="date" value={form.dateOfIncorporation} onChange={(e) => setForm({ ...form, dateOfIncorporation: e.target.value })}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Registered Address</label>
+            <textarea value={form.registeredAddress} onChange={(e) => setForm({ ...form, registeredAddress: e.target.value })}
+              rows={2} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" placeholder="Registered office address" />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Correspondence Address</label>
+            <textarea value={form.correspondenceAddress} onChange={(e) => setForm({ ...form, correspondenceAddress: e.target.value })}
+              rows={2} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" placeholder="Leave blank if same as registered address" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium">Assigned Partner</label>
+              <select value={form.assignedPartnerId} onChange={(e) => setForm({ ...form, assignedPartnerId: e.target.value })}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="">Select partner...</option>
+                {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Client Status</label>
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as "active" | "inactive" })}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
             </div>
           </div>
 

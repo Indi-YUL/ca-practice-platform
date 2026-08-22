@@ -10,5 +10,5 @@ export const services: ServiceMaster[] = [
   { id: "s7", name: "GST Return", category: "GST", frequency: "monthly", department: "GST & Consultancy" },
   { id: "s8", name: "Accounting & Book-keeping", category: "Accounting", frequency: "monthly", department: "Accounting" },
   { id: "s9", name: "Certification (80G/12A)", category: "Certification", frequency: "annual", department: "Auditing & Certification" },
-  { id: "s10", name: "FEMA Advisory", category: "Consultancy", frequency: "occasional", department: "GST & Consultancy" },
+  { id: "s10", name: "FEMA Advisory", category: "Consultancy", frequency: "one_time", department: "GST & Consultancy" },
 ];
